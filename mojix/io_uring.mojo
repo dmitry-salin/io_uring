@@ -241,27 +241,6 @@ struct CQE:
 
 
 @value
-struct CmdArray[ElementType: ExplicitlyCopyable, size: Int]:
-    alias type = __mlir_type[`!pop.array<`, size.value, `, `, ElementType, `>`]
-    var _array: Self.type
-
-    @always_inline("nodebug")
-    fn __init__(inout self, fill: ElementType):
-        constrained[size > 0]()
-        self._array = __mlir_op.`kgen.undef`[_type = Self.type]()
-
-        @parameter
-        for i in range(size):
-            var ptr = UnsafePointer(
-                __mlir_op.`pop.array.gep`(
-                    UnsafePointer.address_of(self._array).address,
-                    i.value,
-                )
-            )
-            ptr.initialize_pointee_explicit_copy(fill)
-
-
-@value
 struct addr3_struct(Defaultable):
     var addr3: UInt64
     var __pad2: InlineArray[UInt64, 1]
@@ -274,7 +253,7 @@ struct addr3_struct(Defaultable):
 
 @value
 struct Sqe[type: SQE]:
-    alias Array = CmdArray[UInt8, type.array_size]
+    alias Array = InlineArray[UInt8, type.array_size]
 
     var opcode: IoUringOp
     var flags: IoUringSqeFlags
@@ -289,14 +268,14 @@ struct Sqe[type: SQE]:
     var personality: UInt16
     var splice_fd_in_or_file_index_or_optlen_or_addr_len: UInt32
     var addr3_or_optval_or_cmd: addr3_struct
-    var big_sqe: Self.Array
+    var _big_sqe: Self.Array
 
     @always_inline("nodebug")
     fn cmd(
         inout self: Sqe[SQE128],
-    ) -> ref [__lifetime_of(self)] CmdArray[UInt8, 80]:
+    ) -> ref [__lifetime_of(self)] InlineArray[UInt8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
-            CmdArray[UInt8, 80]
+            InlineArray[UInt8, 80]
         ]()[]
 
 
@@ -305,13 +284,13 @@ struct Cqe[type: CQE]:
     var user_data: UInt64
     var res: Int32
     var flags: IoUringCqeFlags
-    var big_cqe: CmdArray[UInt64, type.array_size]
+    var _big_cqe: InlineArray[UInt64, type.array_size]
 
     @always_inline("nodebug")
     fn cmd(
         self: Cqe[CQE32],
-    ) -> ref [__lifetime_of(self)] CmdArray[UInt64, CQE32.array_size]:
-        return self.big_cqe
+    ) -> ref [__lifetime_of(self)] InlineArray[UInt64, CQE32.array_size]:
+        return self._big_cqe
 
 
 @value

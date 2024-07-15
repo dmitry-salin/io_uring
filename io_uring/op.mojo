@@ -46,7 +46,7 @@ fn _prep_rw(
 
     @parameter
     if sqe.type is SQE128:
-        sqe.big_sqe = sqe.Array(0)
+        sqe._big_sqe = sqe.Array(0)
 
 
 @always_inline("nodebug")
@@ -73,7 +73,7 @@ fn _prep_addr(
 
     @parameter
     if sqe.type is SQE128:
-        sqe.big_sqe = sqe.Array(0)
+        sqe._big_sqe = sqe.Array(0)
 
 
 trait SqeAttrs:
