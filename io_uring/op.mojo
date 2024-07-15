@@ -204,13 +204,8 @@ struct Read[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn rw_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, rw_flags: ReadWriteFlags) -> ref [lifetime] Self:
-        @parameter
-        if sizeof[ReadWriteFlags]() < sizeof[UInt32]():
-            UnsafePointer.address_of(self.sqe[].op_flags).bitcast[
-                ReadWriteFlags
-            ]()[] = rw_flags
-        else:
-            self.sqe[].op_flags = rw_flags.value
+        constrained[sizeof[ReadWriteFlags]() == sizeof[UInt32]()]()
+        self.sqe[].op_flags = rw_flags.value
         return self
 
     @always_inline("nodebug")
@@ -271,13 +266,8 @@ struct Recv[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn recv_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, recv_flags: RecvFlags) -> ref [lifetime] Self:
-        @parameter
-        if sizeof[RecvFlags]() < sizeof[UInt32]():
-            UnsafePointer.address_of(self.sqe[].op_flags).bitcast[
-                RecvFlags
-            ]()[] = recv_flags
-        else:
-            self.sqe[].op_flags = recv_flags.value
+        constrained[sizeof[RecvFlags]() == sizeof[UInt32]()]()
+        self.sqe[].op_flags = recv_flags.value
         return self
 
     @always_inline("nodebug")
@@ -338,13 +328,8 @@ struct Send[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn send_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, send_flags: SendFlags) -> ref [lifetime] Self:
-        @parameter
-        if sizeof[SendFlags]() < sizeof[UInt32]():
-            UnsafePointer.address_of(self.sqe[].op_flags).bitcast[
-                SendFlags
-            ]()[] = send_flags
-        else:
-            self.sqe[].op_flags = send_flags.value
+        constrained[sizeof[SendFlags]() == sizeof[UInt32]()]()
+        self.sqe[].op_flags = send_flags.value
         return self
 
 
@@ -398,13 +383,8 @@ struct SendZc[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn send_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, send_flags: SendFlags) -> ref [lifetime] Self:
-        @parameter
-        if sizeof[SendFlags]() < sizeof[UInt32]():
-            UnsafePointer.address_of(self.sqe[].op_flags).bitcast[
-                SendFlags
-            ]()[] = send_flags
-        else:
-            self.sqe[].op_flags = send_flags.value
+        constrained[sizeof[SendFlags]() == sizeof[UInt32]()]()
+        self.sqe[].op_flags = send_flags.value
         return self
 
     @always_inline("nodebug")
@@ -487,11 +467,6 @@ struct Write[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn rw_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, rw_flags: ReadWriteFlags) -> ref [lifetime] Self:
-        @parameter
-        if sizeof[ReadWriteFlags]() < sizeof[UInt32]():
-            UnsafePointer.address_of(self.sqe[].op_flags).bitcast[
-                ReadWriteFlags
-            ]()[] = rw_flags
-        else:
-            self.sqe[].op_flags = rw_flags.value
+        constrained[sizeof[ReadWriteFlags]() == sizeof[UInt32]()]()
+        self.sqe[].op_flags = rw_flags.value
         return self

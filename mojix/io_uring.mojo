@@ -253,6 +253,9 @@ struct addr3_struct(Defaultable):
 
 @value
 struct Sqe[type: SQE]:
+    """[Linux]: https://github.com/torvalds/linux/blob/v6.7/include/uapi/linux/io_uring.h#L30.
+    """
+
     alias Array = InlineArray[UInt8, type.array_size]
 
     var opcode: IoUringOp
