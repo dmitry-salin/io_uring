@@ -83,7 +83,7 @@ struct Region(Movable):
             raise "len overflow"
         if len[0] > self.len:
             raise "offset is out of bounds"
-        var ptr = self.ptr.offset(offset)
+        var ptr = self.ptr.offset(int(offset))
         if int(ptr) & (alignof[T]() - 1) != 0:
             raise "region is not properly aligned"
         return ptr.bitcast[T]()

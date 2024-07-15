@@ -181,7 +181,7 @@ struct SqRef[sq_lifetime: MutableLifetime, type: SQE, polling: PollingMode]:
         inout self,
     ) -> ref [__lifetime_of(self)] Sqe[type]:
         var ptr = self.sq[].sqes.offset(
-            self.sq[].sqe_tail & self.sq[].ring_mask
+            int(self.sq[].sqe_tail & self.sq[].ring_mask)
         )
         self.sq[].sqe_tail += 1
         return _nop_data(ptr[])

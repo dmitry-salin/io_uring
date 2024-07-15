@@ -122,7 +122,7 @@ struct CqRef[cq_lifetime: MutableLifetime, type: CQE]:
         inout self,
     ) -> ref [_lit_mut_cast[__lifetime_of(self), False].result] Cqe[type]:
         var ptr = self.cq[].cqes.offset(
-            self.cq[].cqe_head & self.cq[].ring_mask
+            int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
         self.cq[].cqe_head += 1
         return ptr[]
