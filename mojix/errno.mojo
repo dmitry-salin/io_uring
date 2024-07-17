@@ -2,93 +2,14 @@ from .ctypes import c_void
 from linux_raw.x86_64.errno import *
 
 
-@value
 @register_passable("trivial")
-struct Errno(EqualityComparable, Stringable):
+struct Errno(Stringable):
     """The error type for `mojix` APIs.
     It only holds an OS error number, and no extra error info.
 
     Linux returns negated error numbers, and we leave them in negated form, so
     they are in the range `[-4095; 0)`.
     """
-
-    var value: Int16
-    """The error number."""
-
-    @always_inline("nodebug")
-    fn __init__(inout self, *, errno: UInt16):
-        """Constructs an Errno from the error number.
-
-        Args:
-            errno: The error number.
-        """
-        self = Self(negated_errno=-errno.cast[DType.int16]())
-
-    @always_inline("nodebug")
-    fn __init__(inout self, *, error: Error) raises:
-        """Constructs an Errno from the Error message.
-
-        Args:
-            error: The Error message.
-
-        Raises:
-            If the given Error message cannot be parsed as an integer value.
-        """
-        self = Self(negated_errno=int(str(error)))
-
-    @always_inline("nodebug")
-    fn __init__(inout self, *, negated_errno: Int16):
-        """Constructs an Errno from the negated error number.
-
-        Args:
-            negated_errno: The negated error number.
-        """
-        self.value = negated_errno
-        # Linux returns negated error numbers in the range `[-4095; 0)`.
-        debug_assert(
-            self.value >= -4095 and self.value < 0, "error number out of range"
-        )
-
-    # ===-------------------------------------------------------------------===#
-    # Operator dunders
-    # ===-------------------------------------------------------------------===#
-
-    @always_inline("nodebug")
-    fn __eq__(self, rhs: Self) -> Bool:
-        """Compares one Errno to another for equality.
-
-        Args:
-            rhs: The Errno to compare against.
-
-        Returns:
-            True if the Errnos are the same and False otherwise.
-        """
-        return self.value == rhs.value
-
-    @always_inline("nodebug")
-    fn __ne__(self, rhs: Self) -> Bool:
-        """Compares one Errno to another for inequality.
-
-        Args:
-            rhs: The Errno to compare against.
-
-        Returns:
-            False if the Errnos are the same and True otherwise.
-        """
-        return self.value != rhs.value
-
-    # ===-------------------------------------------------------------------===#
-    # Trait implementations
-    # ===-------------------------------------------------------------------===#
-
-    @always_inline("nodebug")
-    fn __str__(self) -> String:
-        """Converts Errno to a string representation.
-
-        Returns:
-            A String of the error number.
-        """
-        return str(self.value)
 
     alias EACCES = Self(errno=EACCES)
     alias EADDRINUSE = Self(errno=EADDRINUSE)
@@ -225,6 +146,84 @@ struct Errno(EqualityComparable, Stringable):
     alias EWOULDBLOCK = Self(errno=EWOULDBLOCK)
     alias EXDEV = Self(errno=EXDEV)
     alias EXFULL = Self(errno=EXDEV)
+
+    var id: Int16
+    """The error number."""
+
+    @always_inline("nodebug")
+    fn __init__(inout self, *, errno: UInt16):
+        """Constructs an Errno from the error number.
+
+        Args:
+            errno: The error number.
+        """
+        self = Self(negated_errno=-errno.cast[DType.int16]())
+
+    @always_inline("nodebug")
+    fn __init__(inout self, *, error: Error) raises:
+        """Constructs an Errno from the Error message.
+
+        Args:
+            error: The Error message.
+
+        Raises:
+            If the given Error message cannot be parsed as an integer value.
+        """
+        self = Self(negated_errno=int(str(error)))
+
+    @always_inline("nodebug")
+    fn __init__(inout self, *, negated_errno: Int16):
+        """Constructs an Errno from the negated error number.
+
+        Args:
+            negated_errno: The negated error number.
+        """
+        self.id = negated_errno
+        # Linux returns negated error numbers in the range `[-4095; 0)`.
+        debug_assert(
+            self.id >= -4095 and self.id < 0, "error number out of range"
+        )
+
+    # ===-------------------------------------------------------------------===#
+    # Operator dunders
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline("nodebug")
+    fn __is__(self, rhs: Self) -> Bool:
+        """Defines whether one Errno has the same identity as another.
+
+        Args:
+            rhs: The Errno to compare against.
+
+        Returns:
+            True if the Errnos have the same identity, False otherwise.
+        """
+        return self.id == rhs.id
+
+    @always_inline("nodebug")
+    fn __isnot__(self, rhs: Self) -> Bool:
+        """Defines whether one Errno has a different identity than another.
+
+        Args:
+            rhs: The Errno to compare against.
+
+        Returns:
+            True if the Errnos have different identities, False otherwise.
+        """
+        return self.id != rhs.id
+
+    # ===-------------------------------------------------------------------===#
+    # Trait implementations
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline("nodebug")
+    fn __str__(self) -> String:
+        """Converts Errno to a string representation.
+
+        Returns:
+            A String of the error number.
+        """
+        return str(self.id)
 
 
 @always_inline("nodebug")

@@ -222,8 +222,8 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
     @always_inline("nodebug")
     fn __getitem__[
         lifetime: ImmutableLifetime
-    ](ref [lifetime]self) -> IoUringFd[lifetime, is_registered]:
-        return IoUringFd[lifetime, is_registered](unsafe_fd=self.fd)
+    ](ref [lifetime]self) -> IoUringFd[is_registered, lifetime]:
+        return IoUringFd[is_registered, lifetime](unsafe_fd=self.fd)
 
     @always_inline("nodebug")
     fn as_fd[lifetime: ImmutableLifetime](ref [lifetime]self) -> Fd[lifetime]:
@@ -232,7 +232,7 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
 
 
 @register_passable("trivial")
-struct IoUringFd[lifetime: ImmutableLifetime, is_registered: Bool](
+struct IoUringFd[is_registered: Bool, lifetime: ImmutableLifetime](
     AsUnsafeFileDescriptor
 ):
     alias REGISTER_FLAGS = IoUringRegisterFlags.REGISTER_USE_REGISTERED_RING
@@ -257,7 +257,7 @@ struct IoUringFd[lifetime: ImmutableLifetime, is_registered: Bool](
     @always_inline("nodebug")
     fn __init__[
         lifetime: ImmutableLifetime
-    ](inout self: IoUringFd[lifetime, False], *, fd: Fd[lifetime]):
+    ](inout self: IoUringFd[False, lifetime], *, fd: Fd[lifetime]):
         self.fd = fd.as_unsafe_fd()
 
     # ===------------------------------------------------------------------=== #

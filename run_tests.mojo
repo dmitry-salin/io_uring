@@ -1,7 +1,6 @@
 from mojix.errno import Errno
 from mojix.timespec import Timespec
-from io_uring import IoUring
-from io_uring.ty import WaitArg
+from io_uring import IoUring, WaitArg
 from testing import assert_equal, assert_raises
 
 

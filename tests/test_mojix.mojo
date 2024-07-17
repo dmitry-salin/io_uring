@@ -95,7 +95,7 @@ fn test_io_uring_enter() raises:
 fn test_io_uring_enter_fail_with_invalid_fd() raises:
     var params = IoUringParams()
     var fd = io_uring_setup[is_registered=False](16, params)
-    var invalid_fd = IoUringFd[ImmutableStaticLifetime, is_registered=False](
+    var invalid_fd = IoUringFd[False, ImmutableStaticLifetime](
         unsafe_fd=fd.as_unsafe_fd()
     )
     with assert_raises(contains=str(Errno.EBADF)):

@@ -55,12 +55,10 @@ struct WaitArg[
     fn as_enter_arg(
         self,
     ) -> EnterArg[
-        __lifetime_of(self),
         sizeof[IoUringGetEventsArg](),
-        IoUringEnterFlags.EXT_ARG,
+        Self.enter_flags,
+        __lifetime_of(self),
     ]:
         return EnterArg[
-            __lifetime_of(self),
-            sizeof[IoUringGetEventsArg](),
-            Self.enter_flags,
+            sizeof[IoUringGetEventsArg](), Self.enter_flags, __lifetime_of(self)
         ](arg_unsafe_ptr=UnsafePointer.address_of(self.arg).bitcast[c_void]())

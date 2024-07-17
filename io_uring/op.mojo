@@ -15,8 +15,8 @@ from mojix.fd import IoUringFd, NoFd
 
 @always_inline("nodebug")
 fn _nop_data[
-    type: SQE, sqe_lifetime: MutableLifetime
-](ref [sqe_lifetime]sqe: Sqe[type]) -> ref [sqe_lifetime] Sqe[type]:
+    type: SQE, lifetime: MutableLifetime
+](ref [lifetime]sqe: Sqe[type]) -> ref [lifetime] Sqe[type]:
     sqe.opcode = IoUringOp.NOP
     sqe.flags = IoUringSqeFlags.CQE_SKIP_SUCCESS
     return sqe
@@ -94,7 +94,7 @@ trait SqeAttrs:
 
 
 @register_passable("trivial")
-struct Nop[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct Nop[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Do not perform any I/O.
     A no-op is more useful than may appear at first glance.
     For example, you could set `IOSQE_IO_DRAIN_BIT` using `sqe_flags()`,
@@ -105,14 +105,14 @@ struct Nop[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
 
     alias SINCE = 5.1
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
-    fn __init__(inout self, ref [sqe_lifetime]sqe: Sqe[type]):
+    fn __init__(inout self, ref [lifetime]sqe: Sqe[type]):
         _prep_rw(
             sqe,
             IoUringOp.NOP,
-            IoUringFd[ImmutableStaticLifetime, False](unsafe_fd=NoFd),
+            IoUringFd[False, ImmutableStaticLifetime](unsafe_fd=NoFd),
             0,
             0,
         )
@@ -141,17 +141,17 @@ struct Nop[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
 
 
 @register_passable("trivial")
-struct Read[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct Read[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Read, equivalent to `pread(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
-        ref [sqe_lifetime]sqe: Sqe[type],
+        ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -217,17 +217,17 @@ struct Read[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
 
 
 @register_passable("trivial")
-struct Recv[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct Recv[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Receive a message from a socket, equivalent to `recv(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
-        ref [sqe_lifetime]sqe: Sqe[type],
+        ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -279,17 +279,17 @@ struct Recv[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
 
 
 @register_passable("trivial")
-struct Send[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct Send[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Send a message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
-        ref [sqe_lifetime]sqe: Sqe[type],
+        ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -334,17 +334,17 @@ struct Send[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
 
 
 @register_passable("trivial")
-struct SendZc[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct SendZc[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Send a zerocopy message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 6.0
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
-        ref [sqe_lifetime]sqe: Sqe[type],
+        ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -398,23 +398,23 @@ struct SendZc[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
     fn send_flags[
         lifetime: MutableLifetime
     ](ref [lifetime]self, send_flags: IoUringSendFlags) -> ref [lifetime] Self:
-        constrained[sizeof[UInt16]() == sizeof[IoUringSendFlags]()]()
+        constrained[sizeof[IoUringSendFlags]() == sizeof[UInt16]()]()
         self.sqe[].ioprio = send_flags.value
         return self
 
 
 @register_passable("trivial")
-struct Write[sqe_lifetime: MutableLifetime, type: SQE](SqeAttrs):
+struct Write[type: SQE, lifetime: MutableLifetime](SqeAttrs):
     """Write, equivalent to `pwrite(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], sqe_lifetime]
+    var sqe: Reference[Sqe[type], lifetime]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
-        ref [sqe_lifetime]sqe: Sqe[type],
+        ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,

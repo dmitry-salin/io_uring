@@ -1,12 +1,12 @@
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct AtomicOrdering:
-    var value: UInt8
+    alias ACQUIRE = Self {id: 0}
+    alias RELEASE = Self {id: 1}
+    alias RELAXED = Self {id: 2}
 
-    alias ACQUIRE = Self {value: 0}
-    alias RELEASE = Self {value: 1}
-    alias RELAXED = Self {value: 2}
-
+    var id: UInt8
+    
     @always_inline("nodebug")
     fn __is__(self, rhs: Self) -> Bool:
         """Defines whether one AtomicOrdering has the same identity as another.
@@ -17,7 +17,7 @@ struct AtomicOrdering:
         Returns:
             True if theAtomicOrderings have the same identity, False otherwise.
         """
-       return self.value == rhs.value
+       return self.id == rhs.id
 
 
 @always_inline("nodebug")

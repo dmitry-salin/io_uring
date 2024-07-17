@@ -9,12 +9,12 @@ alias SQPOLL = PollingMode.SQPOLL
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct PollingMode(Identifiable):
-    var id: UInt8
-    var setup_flags: IoUringSetupFlags
-
     alias NOPOLL = Self {id: 0, setup_flags: IoUringSetupFlags()}
     alias IOPOLL = Self {id: 1, setup_flags: IoUringSetupFlags.IOPOLL}
     alias SQPOLL = Self {id: 2, setup_flags: IoUringSetupFlags.SQPOLL}
+
+    var id: UInt8
+    var setup_flags: IoUringSetupFlags
 
     @always_inline("nodebug")
     fn __is__(self, rhs: Self) -> Bool:

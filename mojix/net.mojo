@@ -4,26 +4,26 @@ from linux_raw.x86_64.net import *
 @value
 @register_passable("trivial")
 struct SendFlags:
-    var value: UInt32
+    alias CONFIRM = Self(MSG_CONFIRM)
+    alias DONTROUTE = Self(MSG_DONTROUTE)
+    alias DONTWAIT = Self(MSG_DONTWAIT)
+    alias EOR = Self(MSG_EOR)
+    alias MORE = Self(MSG_MORE)
+    alias NOSIGNAL = Self(MSG_NOSIGNAL)
+    alias OOB = Self(MSG_OOB)
 
-    alias CONFIRM = UInt32(MSG_CONFIRM)
-    alias DONTROUTE = UInt32(MSG_DONTROUTE)
-    alias DONTWAIT = UInt32(MSG_DONTWAIT)
-    alias EOR = UInt32(MSG_EOR)
-    alias MORE = UInt32(MSG_MORE)
-    alias NOSIGNAL = UInt32(MSG_NOSIGNAL)
-    alias OOB = UInt32(MSG_OOB)
+    var value: UInt32
 
 
 @value
 @register_passable("trivial")
 struct RecvFlags:
-    var value: UInt32
+    alias CMSG_CLOEXEC = Self(MSG_CMSG_CLOEXEC)
+    alias DONTWAIT = Self(MSG_DONTWAIT)
+    alias ERRQUEUE = Self(MSG_ERRQUEUE)
+    alias OOB = Self(MSG_OOB)
+    alias PEEK = Self(MSG_PEEK)
+    alias TRUNC = Self(MSG_TRUNC)
+    alias WAITALL = Self(MSG_WAITALL)
 
-    alias CMSG_CLOEXEC = UInt32(MSG_CMSG_CLOEXEC)
-    alias DONTWAIT = UInt32(MSG_DONTWAIT)
-    alias ERRQUEUE = UInt32(MSG_ERRQUEUE)
-    alias OOB = UInt32(MSG_OOB)
-    alias PEEK = UInt32(MSG_PEEK)
-    alias TRUNC = UInt32(MSG_TRUNC)
-    alias WAITALL = UInt32(MSG_WAITALL)
+    var value: UInt32

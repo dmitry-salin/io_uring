@@ -1,4 +1,4 @@
-# Currently only x86-64 platform is supported.
+# Currently only x86_64 platform is supported.
 
 # The signedness of `char` is platform-specific.
 alias c_char = c_schar

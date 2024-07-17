@@ -21,7 +21,7 @@ mojo -I . run_tests.mojo
 ```
 
 ## Requirements
-Currently only x86-64 platform is supported. Mojo nightly builds are required.
+Currently only x86_64 platform is supported. Mojo nightly builds are required.
 
 
 ## License
