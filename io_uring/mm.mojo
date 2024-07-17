@@ -1,5 +1,6 @@
 from .cq import Cq
 from .params import Entries
+from .utils import _add_with_overflow
 from mojix.ctypes import c_void
 from mojix.io_uring import (
     Sqe,
@@ -78,7 +79,7 @@ struct Region(Movable):
         constrained[alignof[T]() > 0]()
         constrained[sizeof[c_void]() == 1]()
 
-        var len = offset.add_with_overflow(count * sizeof[T]())
+        var len = _add_with_overflow(offset, count * sizeof[T]())
         if len[1]:
             raise "len overflow"
         if len[0] > self.len:

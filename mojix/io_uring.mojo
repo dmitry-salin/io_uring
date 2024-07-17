@@ -156,12 +156,6 @@ alias SQE128 = SQE.sqe128
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct SQE:
-    var id: UInt8
-    var size: IntLiteral
-    var align: IntLiteral
-    var array_size: IntLiteral
-    var setup_flags: IoUringSetupFlags
-
     alias sqe64 = Self {
         id: 0,
         size: 64,
@@ -169,6 +163,7 @@ struct SQE:
         array_size: 0,
         setup_flags: IoUringSetupFlags(),
     }
+
     alias sqe128 = Self {
         id: 1,
         size: 128,
@@ -176,6 +171,12 @@ struct SQE:
         array_size: 64,
         setup_flags: IoUringSetupFlags.SQE128,
     }
+
+    var id: UInt8
+    var size: IntLiteral
+    var align: IntLiteral
+    var array_size: IntLiteral
+    var setup_flags: IoUringSetupFlags
 
     @always_inline("nodebug")
     fn __is__(self, rhs: Self) -> Bool:
@@ -200,6 +201,24 @@ alias CQE_SIZE_MAX = CQE32.size
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct CQE:
+    alias cqe16 = Self {
+        id: 0,
+        size: 16,
+        align: 8,
+        array_size: 0,
+        rings_size: 64,
+        setup_flags: IoUringSetupFlags(),
+    }
+
+    alias cqe32 = Self {
+        id: 1,
+        size: 32,
+        align: 8,
+        array_size: 2,
+        rings_size: 64 * 2,
+        setup_flags: IoUringSetupFlags.CQE32,
+    }
+
     var id: UInt8
     var size: IntLiteral
     var align: IntLiteral
@@ -210,23 +229,6 @@ struct CQE:
     [Linux]: https://github.com/torvalds/linux/blob/v6.7/include/linux/io_uring_types.h#L83.
     """
     var setup_flags: IoUringSetupFlags
-
-    alias cqe16 = Self {
-        id: 0,
-        size: 16,
-        align: 8,
-        array_size: 0,
-        rings_size: 64,
-        setup_flags: IoUringSetupFlags(),
-    }
-    alias cqe32 = Self {
-        id: 1,
-        size: 32,
-        align: 8,
-        array_size: 2,
-        rings_size: 64 * 2,
-        setup_flags: IoUringSetupFlags.CQE32,
-    }
 
     @always_inline("nodebug")
     fn __is__(self, rhs: Self) -> Bool:
@@ -555,7 +557,7 @@ struct IoUringSqeFlags(Defaultable):
 
 @value
 @register_passable("trivial")
-struct IoUringCqeFlags(Defaultable):
+struct IoUringCqeFlags(Defaultable, Boolable):
     alias BUFFER = Self(IORING_CQE_F_BUFFER)
     alias MORE = Self(IORING_CQE_F_MORE)
     alias SOCK_NONEMPTY = Self(IORING_CQE_F_SOCK_NONEMPTY)

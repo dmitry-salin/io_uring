@@ -96,7 +96,7 @@ struct OwnedFd(OwnedFileDescriptor):
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        """Close the file descriptor."""
+        """Closes the file descriptor."""
         close(unsafe_fd=self.fd)
 
     # ===------------------------------------------------------------------=== #
@@ -189,6 +189,7 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
 
     @always_inline("nodebug")
     fn __del__(owned self):
+        """Closes/unregisters the file descriptor."""
         @parameter
         if is_registered:
             var op = IoUringRsrcUpdate(self.fd.cast[UInt32.element_type](), 0, 0)
@@ -199,7 +200,6 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
             except:
                 pass
         else:    
-            """Close the file descriptor."""
             close(unsafe_fd=self.fd)
 
     # ===------------------------------------------------------------------=== #

@@ -1,3 +1,5 @@
+from sys.intrinsics import _RegisterPackType
+
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct AtomicOrdering:
@@ -111,3 +113,21 @@ fn _one_less_than_next_power_of_two(value: UInt32) -> UInt32:
     # intrinsics when the argument is non-zero.
     var z = llvm_intrinsic["llvm.ctlz", UInt32, has_side_effect=False](p, True)
     return UInt32.MAX >> z
+
+@always_inline("nodebug")
+fn _add_with_overflow(lhs: UInt32, rhs: UInt32) -> (UInt32, Bool):
+    """Computes `lhs + rhs` and a `Bool` indicating overflow.
+    Args:
+        lhs: The lhs value.
+        rhs: The rhs value.
+    Returns:
+        A tuple with the results of the operation and a `Bool` indicating
+        overflow.
+    """
+    var result = llvm_intrinsic[
+        "llvm.uadd.with.overflow",
+        _RegisterPackType[UInt32, Bool],
+        UInt32,
+        UInt32,
+    ](lhs, rhs)
+    return (result[0], result[1])
