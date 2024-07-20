@@ -174,7 +174,7 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
 
         Safety:
             The `unsafe_fd` must be returned by a successful call
-            to `io_uring_setup()`.
+            to `io_uring_setup`.
         """
 
         @parameter

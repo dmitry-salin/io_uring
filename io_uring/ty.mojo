@@ -12,6 +12,10 @@ struct WaitArg[
 
     var arg: IoUringGetEventsArg
 
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
+
     @always_inline("nodebug")
     fn __init__(inout self):
         self.arg = IoUringGetEventsArg()
@@ -50,6 +54,10 @@ struct WaitArg[
             0,
             int(UnsafePointer.address_of(timespec)),
         )
+
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
     fn as_enter_arg(

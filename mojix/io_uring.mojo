@@ -52,7 +52,7 @@ fn io_uring_register(
     fd: IoUringFd,
     arg: RegisterArg,
 ) raises -> UInt32:
-    """Unsafely registers/unregisters files or user buffers for asynchronous I/O.
+    """Registers/unregisters files or user buffers for asynchronous I/O.
     [Linux]: https://www.man7.org/linux/man-pages/man2/io_uring_register.2.html.
 
     Args:
@@ -64,11 +64,6 @@ fn io_uring_register(
 
     Raises:
         `Errno` if the syscall returned an error.
-
-    Safety:
-        io_uring operates on unsafe pointers and unsafe file descriptors.
-        Users are responsible for ensuring that memory and resources are only
-        accessed in valid ways.
     """
     var res = syscall[__NR_io_uring_register, Scalar[DType.index],](
         fd,
@@ -88,12 +83,13 @@ fn io_uring_enter(
     flags: IoUringEnterFlags,
     arg: EnterArg,
 ) raises -> UInt32:
-    """Unsafely initiates and/or waits for asynchronous I/O to complete.
+    """Initiates and/or waits for asynchronous I/O to complete.
     [Linux]: https://man7.org/linux/man-pages/man2/io_uring_enter.2.html.
 
     Args:
         fd: The file descriptor returned by `io_uring_setup`.
-        to_submit: The number of I/Os to submit from the submission queue.
+        to_submit: The number of I/Os to submit from the submission
+                          queue.
         min_complete: The specified number of events to wait for before
                       returning (if `GETEVENTS` flag is set).
         flags: The bitmask of the `IoUringEnterFlags` values.
@@ -105,11 +101,6 @@ fn io_uring_enter(
 
     Raises:
         `Errno` if the syscall returned an error.
-
-    Safety:
-        io_uring operates on unsafe pointers and unsafe file descriptors.
-        Users are responsible for ensuring that memory and resources are only
-        accessed in valid ways.
     """
     var res = syscall[__NR_io_uring_enter, Scalar[DType.index],](
         fd,
@@ -149,14 +140,14 @@ struct IoUringParams(Defaultable):
         self.cq_off = io_cqring_offsets()
 
 
-alias SQE64 = SQE.sqe64
-alias SQE128 = SQE.sqe128
+alias SQE64 = SQE.SQE64
+alias SQE128 = SQE.SQE128
 
 
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct SQE:
-    alias sqe64 = Self {
+    alias SQE64 = Self {
         id: 0,
         size: 64,
         align: 8,
@@ -164,7 +155,7 @@ struct SQE:
         setup_flags: IoUringSetupFlags(),
     }
 
-    alias sqe128 = Self {
+    alias SQE128 = Self {
         id: 1,
         size: 128,
         align: 8,
@@ -191,8 +182,8 @@ struct SQE:
         return self.id == rhs.id
 
 
-alias CQE16 = CQE.cqe16
-alias CQE32 = CQE.cqe32
+alias CQE16 = CQE.CQE16
+alias CQE32 = CQE.CQE32
 
 alias CQE_SIZE_DEFAULT = CQE16.size
 alias CQE_SIZE_MAX = CQE32.size
@@ -201,7 +192,7 @@ alias CQE_SIZE_MAX = CQE32.size
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct CQE:
-    alias cqe16 = Self {
+    alias CQE16 = Self {
         id: 0,
         size: 16,
         align: 8,
@@ -210,7 +201,7 @@ struct CQE:
         setup_flags: IoUringSetupFlags(),
     }
 
-    alias cqe32 = Self {
+    alias CQE32 = Self {
         id: 1,
         size: 32,
         align: 8,
@@ -287,6 +278,9 @@ struct Sqe[type: SQE]:
 
 @value
 struct Cqe[type: CQE]:
+    """[Linux]: https://github.com/torvalds/linux/blob/v6.7/include/uapi/linux/io_uring.h#L392.
+    """
+
     var user_data: UInt64
     var res: Int32
     var flags: IoUringCqeFlags
@@ -793,9 +787,9 @@ struct EnterArg[
 ]:
     """
     Parameters:
-        lifetime: The lifetime of the enter argument.
         size: The size of the enter argument.
         flags: The bitmask of the `IoUringEnterFlags` values.
+        lifetime: The lifetime of the enter argument.
     """
 
     var arg_unsafe_ptr: UnsafePointer[c_void]

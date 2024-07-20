@@ -42,6 +42,10 @@ struct IoUring[
     var fd: IoUringOwnedFd[is_registered]
     var mem: MemoryMapping[sqe, cqe]
 
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
+
     fn __init__(inout self, *, sq_entries: UInt32) raises:
         self.__init__(sq_entries=sq_entries, params=Params())
 
@@ -114,6 +118,10 @@ struct IoUring[
         self.mem^.__del__()
         self.fd^.__del__()
 
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
+
     @always_inline
     fn as_fd[
         lifetime: ImmutableLifetime
@@ -123,14 +131,14 @@ struct IoUring[
     @always_inline
     fn sq(
         inout self,
-    ) -> SqRef[__lifetime_of(self), sqe, polling]:
+    ) -> SqRef[sqe, polling, __lifetime_of(self)]:
         self.sync_sq_head()
         return self.unsynced_sq()
 
     @always_inline
     fn unsynced_sq(
         inout self,
-    ) -> SqRef[__lifetime_of(self), sqe, polling]:
+    ) -> SqRef[sqe, polling, __lifetime_of(self)]:
         return self._sq
 
     @always_inline
@@ -153,7 +161,7 @@ struct IoUring[
         if self.sq_needs_enter(submitted, flags) or cq_needs_enter:
             if cq_needs_enter:
                 flags |= IoUringEnterFlags.GETEVENTS
-            return self.unsafe_enter(
+            return self.enter(
                 to_submit=submitted, min_complete=wait_nr, flags=flags, arg=arg
             )
 
@@ -184,13 +192,13 @@ struct IoUring[
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32
-    ) raises -> CqRef[__lifetime_of(self), cqe]:
+    ) raises -> CqRef[cqe, __lifetime_of(self)]:
         return self.cq(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32, arg: EnterArg
-    ) raises -> CqRef[__lifetime_of(self), cqe]:
+    ) raises -> CqRef[cqe, __lifetime_of(self)]:
         self.flush_cq(wait_nr, arg)
         return self._cq
 
@@ -198,7 +206,7 @@ struct IoUring[
     fn flush_cq(inout self, wait_nr: UInt32, arg: EnterArg) raises:
         self._cq.sync_tail()
         if not self._cq and (wait_nr > 0 or self.cq_needs_flush()):
-            _ = self.unsafe_enter(
+            _ = self.enter(
                 to_submit=0,
                 min_complete=wait_nr,
                 flags=IoUringEnterFlags.GETEVENTS,
@@ -225,7 +233,7 @@ struct IoUring[
         return io_uring_register(self.fd[], arg)
 
     @always_inline
-    fn unsafe_enter(
+    fn enter(
         self,
         *,
         to_submit: UInt32,

@@ -18,10 +18,7 @@ fn _syscall_constraints[
 
     constrained[
         args_nr <= len(arg_regs),
-        (
-            "the number of arguments must be less than or equal to the maximum"
-            " for x86_64"
-        ),
+        "the number of arguments must be less than or equal to the maximum",
     ]()
 
     @parameter

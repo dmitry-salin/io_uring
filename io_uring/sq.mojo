@@ -13,6 +13,8 @@ from mojix.io_uring import (
 
 
 struct Sq[type: SQE, polling: PollingMode](Sized, Boolable):
+    """Submission Queue."""
+
     var _head: UnsafePointer[UInt32]
     var _tail: UnsafePointer[UInt32]
     var _flags: UnsafePointer[UInt32]
@@ -26,6 +28,10 @@ struct Sq[type: SQE, polling: PollingMode](Sized, Boolable):
 
     var ring_mask: UInt32
     var ring_entries: UInt32
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     fn __init__(
         inout self,
@@ -156,16 +162,40 @@ struct Sq[type: SQE, polling: PollingMode](Sized, Boolable):
 
 
 @register_passable
-struct SqRef[sq_lifetime: MutableLifetime, type: SQE, polling: PollingMode]:
+struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
+    Sized, Boolable
+):
     var sq: Reference[Sq[type, polling], sq_lifetime]
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     @always_inline
     fn __init__(inout self, ref [sq_lifetime]sq: Sq[type, polling]):
         self.sq = sq
 
+    # ===------------------------------------------------------------------=== #
+    # Operator dunders
+    # ===------------------------------------------------------------------=== #
+
     @always_inline
     fn __iter__(owned self) -> Self:
         return self^
+
+    @always_inline
+    fn __next__(
+        inout self,
+    ) -> ref [__lifetime_of(self)] Sqe[type]:
+        var ptr = self.sq[].sqes.offset(
+            int(self.sq[].sqe_tail & self.sq[].ring_mask)
+        )
+        self.sq[].sqe_tail += 1
+        return _nop_data(ptr[])
+
+    # ===------------------------------------------------------------------=== #
+    # Trait implementations
+    # ===------------------------------------------------------------------=== #
 
     @always_inline
     fn __len__(self) -> Int:
@@ -177,11 +207,11 @@ struct SqRef[sq_lifetime: MutableLifetime, type: SQE, polling: PollingMode]:
         return len(self.sq[])
 
     @always_inline
-    fn __next__(
-        inout self,
-    ) -> ref [__lifetime_of(self)] Sqe[type]:
-        var ptr = self.sq[].sqes.offset(
-            int(self.sq[].sqe_tail & self.sq[].ring_mask)
-        )
-        self.sq[].sqe_tail += 1
-        return _nop_data(ptr[])
+    fn __bool__(self) -> Bool:
+        """Checks whether the sq has any available entries or not.
+
+        Returns:
+            `False` if the sq is full, `True` if there is at least one available
+            entry.
+        """
+        return bool(self.sq[])

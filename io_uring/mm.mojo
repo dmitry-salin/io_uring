@@ -27,6 +27,10 @@ struct Region(Movable):
     var ptr: UnsafePointer[c_void]
     var len: UInt
 
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
+
     @always_inline
     fn __init__(inout self, *, fd: Fd, offset: UInt64, len: UInt) raises:
         self.ptr = mmap(
@@ -58,6 +62,10 @@ struct Region(Movable):
         except:
             pass
 
+    # ===-------------------------------------------------------------------===#
+    # Trait implementations
+    # ===-------------------------------------------------------------------===#
+
     @always_inline
     fn __moveinit__(inout self, owned existing: Self):
         """Moves data of an existing Region into a new one.
@@ -67,6 +75,10 @@ struct Region(Movable):
         """
         self.ptr = existing.ptr
         self.len = existing.len
+
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline
     fn dontfork(self) raises:
@@ -94,9 +106,13 @@ struct Region(Movable):
         return int(self.ptr)
 
 
-struct MemoryMapping[sqe: SQE, cqe: CQE]:
+struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
     var sqes_mem: Region
     var sq_cq_mem: Region
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     @always_inline
     fn __init__(inout self, *, owned sqes_mem: Region, owned sq_cq_mem: Region):
@@ -142,6 +158,24 @@ struct MemoryMapping[sqe: SQE, cqe: CQE]:
 
         params.cq_off.user_addr = self.sq_cq_mem.addr()
         params.sq_off.user_addr = self.sqes_mem.addr()
+
+    # ===-------------------------------------------------------------------===#
+    # Trait implementations
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        """Moves data of an existing MemoryMapping into a new one.
+
+        Args:
+            existing: The existing MemoryMapping.
+        """
+        self.sqes_mem = existing.sqes_mem^
+        self.sq_cq_mem = existing.sq_cq_mem^
+
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline
     fn dontfork(self) raises:

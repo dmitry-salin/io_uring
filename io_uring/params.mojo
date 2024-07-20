@@ -15,6 +15,10 @@ struct Params(Defaultable):
     var wq_fd: UInt32
     var _dontfork: Bool
 
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
+
     fn __init__(inout self):
         self.flags = IoUringSetupFlags.NO_SQARRAY
         self._cq_entries = 0
@@ -22,6 +26,10 @@ struct Params(Defaultable):
         self.sq_thread_idle = 0
         self.wq_fd = 0
         self._dontfork = False
+
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
 
     # TODO: Use NonZeroUInt32 value type.
     fn cq_entries(inout self, value: UInt32) -> ref [__lifetime_of(self)] Self:
@@ -45,6 +53,10 @@ struct Params(Defaultable):
 struct Entries:
     var sq_entries: UInt32
     var cq_entries: UInt32
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     fn __init__(
         inout self, *, sq_entries: UInt32, params: IoUringParams

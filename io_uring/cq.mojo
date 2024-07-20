@@ -5,6 +5,8 @@ from builtin.builtin_list import _lit_mut_cast
 
 
 struct Cq[type: CQE](Sized, Boolable):
+    """Completion Queue."""
+
     var _head: UnsafePointer[UInt32]
     var _tail: UnsafePointer[UInt32]
     var flags: UnsafePointer[UInt32]
@@ -16,6 +18,10 @@ struct Cq[type: CQE](Sized, Boolable):
 
     var ring_mask: UInt32
     var ring_entries: UInt32
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     fn __init__(inout self, params: IoUringParams, *, sq_cq_mem: Region) raises:
         constrained[
@@ -97,25 +103,28 @@ struct Cq[type: CQE](Sized, Boolable):
 
 
 @register_passable
-struct CqRef[cq_lifetime: MutableLifetime, type: CQE]:
+struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
     var cq: Reference[Cq[type], cq_lifetime]
+
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
 
     @always_inline
     fn __init__(inout self, ref [cq_lifetime]cq: Cq[type]):
         self.cq = cq
 
     @always_inline
-    fn __iter__(owned self) -> Self:
-        return self^
+    fn __del__(owned self):
+        self.cq[].sync_head()
+
+    # ===------------------------------------------------------------------=== #
+    # Operator dunders
+    # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __len__(self) -> Int:
-        """Returns the number of entries in the cq.
-
-        Returns:
-            The number of entries in the cq.
-        """
-        return len(self.cq[])
+    fn __iter__(owned self) -> Self:
+        return self^
 
     @always_inline
     fn __next__(
@@ -127,6 +136,24 @@ struct CqRef[cq_lifetime: MutableLifetime, type: CQE]:
         self.cq[].cqe_head += 1
         return ptr[]
 
+    # ===------------------------------------------------------------------=== #
+    # Trait implementations
+    # ===------------------------------------------------------------------=== #
+
     @always_inline
-    fn __del__(owned self):
-        self.cq[].sync_head()
+    fn __len__(self) -> Int:
+        """Returns the number of entries in the cq.
+
+        Returns:
+            The number of entries in the cq.
+        """
+        return len(self.cq[])
+
+    @always_inline
+    fn __bool__(self) -> Bool:
+        """Checks whether the cq has any entries or not.
+
+        Returns:
+            `False` if the cq is empty, `True` if there is at least one entry.
+        """
+        return bool(self.cq[])

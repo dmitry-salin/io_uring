@@ -4,6 +4,8 @@ from linux_raw.x86_64.net import *
 @value
 @register_passable("trivial")
 struct SendFlags:
+    """`MSG_*` flags for use with `send`, `send_to`, and related functions."""
+
     alias CONFIRM = Self(MSG_CONFIRM)
     alias DONTROUTE = Self(MSG_DONTROUTE)
     alias DONTWAIT = Self(MSG_DONTWAIT)
@@ -18,6 +20,8 @@ struct SendFlags:
 @value
 @register_passable("trivial")
 struct RecvFlags:
+    """`MSG_*` flags for use with `recv`, `recvfrom`, and related functions."""
+
     alias CMSG_CLOEXEC = Self(MSG_CMSG_CLOEXEC)
     alias DONTWAIT = Self(MSG_DONTWAIT)
     alias ERRQUEUE = Self(MSG_ERRQUEUE)

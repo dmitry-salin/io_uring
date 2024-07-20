@@ -150,6 +150,10 @@ struct Errno(Stringable):
     var id: Int16
     """The error number."""
 
+    # ===------------------------------------------------------------------=== #
+    # Life cycle methods
+    # ===------------------------------------------------------------------=== #
+
     @always_inline("nodebug")
     fn __init__(inout self, *, errno: UInt16):
         """Constructs an Errno from the error number.

@@ -27,8 +27,7 @@ fn mmap(
         flags: The bitmask of the `MapFlags` values.
         fd: The file descriptor that refers to the file (or other object)
             containing the mapping.
-        offset: The offset in the file (or other object) referred to
-                by `unsafe_fd`.
+        offset: The offset in the file (or other object) referred to by `fd`.
 
     Returns:
         Pointer to the mapped area.
@@ -133,6 +132,8 @@ fn madvise(
 @value
 @register_passable("trivial")
 struct MapFlags(Defaultable):
+    """`MAP_*` flags for use with `mmap` and `mmap_anonymous`."""
+
     alias SHARED = Self(MAP_SHARED)
     alias SHARED_VALIDATE = Self(MAP_SHARED_VALIDATE)
     alias PRIVATE = Self(MAP_PRIVATE)
@@ -180,12 +181,19 @@ struct MapFlags(Defaultable):
 
 @value
 @register_passable("trivial")
-struct ProtFlags:
+struct ProtFlags(Defaultable):
+    """`PROT_*` flags for use with `mmap`."""
+
+    alias NONE = Self(PROT_NONE)
     alias READ = Self(PROT_READ)
     alias WRITE = Self(PROT_WRITE)
     alias EXEC = Self(PROT_EXEC)
 
     var value: UInt32
+
+    @always_inline("nodebug")
+    fn __init__(inout self):
+        self.value = 0
 
     @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
@@ -202,6 +210,8 @@ struct ProtFlags:
 
 @register_passable("trivial")
 struct Advice:
+    """`POSIX_MADV_*` constants for use with `madvise`."""
+
     alias NORMAL = Self {id: MADV_NORMAL}
     alias RANDOM = Self {id: MADV_RANDOM}
     alias SEQUENTIAL = Self {id: MADV_SEQUENTIAL}
