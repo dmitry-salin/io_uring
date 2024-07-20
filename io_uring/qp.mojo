@@ -36,7 +36,7 @@ struct IoUring[
     polling: PollingMode = NOPOLL,
     *,
     is_registered: Bool = True,
-]:
+](Movable):
     var _sq: Sq[sqe, polling]
     var _cq: Cq[cqe]
     var fd: IoUringOwnedFd[is_registered]
@@ -117,6 +117,18 @@ struct IoUring[
         # as it may depend on it.
         self.mem^.__del__()
         self.fd^.__del__()
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        """Moves data of an existing IoUring into a new one.
+
+        Args:
+            existing: The existing IoUring.
+        """
+        self._sq = existing._sq^
+        self._cq = existing._cq^
+        self.fd = existing.fd^
+        self.mem = existing.mem^
 
     # ===-------------------------------------------------------------------===#
     # Methods
@@ -216,8 +228,9 @@ struct IoUring[
 
     @always_inline
     fn cq_needs_flush(self) -> Bool:
-        return self._sq.flags() & (
-            IoUringSqFlags.CQ_OVERFLOW | IoUringSqFlags.TASKRUN
+        return bool(
+            self._sq.flags()
+            & (IoUringSqFlags.CQ_OVERFLOW | IoUringSqFlags.TASKRUN)
         )
 
     @always_inline

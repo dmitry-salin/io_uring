@@ -12,7 +12,7 @@ from mojix.io_uring import (
 )
 
 
-struct Sq[type: SQE, polling: PollingMode](Sized, Boolable):
+struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
     """Submission Queue."""
 
     var _head: UnsafePointer[UInt32]
@@ -88,6 +88,24 @@ struct Sq[type: SQE, polling: PollingMode](Sized, Boolable):
         )
         self.sqe_head = self._head[]
         self.sqe_tail = self._tail[]
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        """Moves data of an existing Sq into a new one.
+
+        Args:
+            existing: The existing Sq.
+        """
+        self._head = existing._head
+        self._tail = existing._tail
+        self._flags = existing._flags
+        self.dropped = existing.dropped
+        self.array = existing.array
+        self.sqes = existing.sqes
+        self.sqe_head = existing.sqe_head
+        self.sqe_tail = existing.sqe_tail
+        self.ring_mask = existing.ring_mask
+        self.ring_entries = existing.ring_entries
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations

@@ -62,10 +62,6 @@ struct Region(Movable):
         except:
             pass
 
-    # ===-------------------------------------------------------------------===#
-    # Trait implementations
-    # ===-------------------------------------------------------------------===#
-
     @always_inline
     fn __moveinit__(inout self, owned existing: Self):
         """Moves data of an existing Region into a new one.
@@ -158,10 +154,6 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
 
         params.cq_off.user_addr = self.sq_cq_mem.addr()
         params.sq_off.user_addr = self.sqes_mem.addr()
-
-    # ===-------------------------------------------------------------------===#
-    # Trait implementations
-    # ===-------------------------------------------------------------------===#
 
     @always_inline
     fn __moveinit__(inout self, owned existing: Self):

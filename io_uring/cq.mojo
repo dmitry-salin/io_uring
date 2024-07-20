@@ -4,7 +4,7 @@ from mojix.io_uring import Cqe, CQE, CQE16, CQE32, IoUringParams
 from builtin.builtin_list import _lit_mut_cast
 
 
-struct Cq[type: CQE](Sized, Boolable):
+struct Cq[type: CQE](Movable, Sized, Boolable):
     """Completion Queue."""
 
     var _head: UnsafePointer[UInt32]
@@ -62,6 +62,23 @@ struct Cq[type: CQE](Sized, Boolable):
         )
         self.cqe_head = self._head[]
         self.cqe_tail = self._tail[]
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        """Moves data of an existing Cq into a new one.
+
+        Args:
+            existing: The existing Cq.
+        """
+        self._head = existing._head
+        self._tail = existing._tail
+        self.flags = existing.flags
+        self.overflow = existing.overflow
+        self.cqes = existing.cqes
+        self.cqe_head = existing.cqe_head
+        self.cqe_tail = existing.cqe_tail
+        self.ring_mask = existing.ring_mask
+        self.ring_entries = existing.ring_entries
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations
