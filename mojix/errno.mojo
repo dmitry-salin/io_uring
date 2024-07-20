@@ -239,6 +239,11 @@ fn _check_for_errors(raw: Scalar[DType.index]) raises:
 
 
 @always_inline("nodebug")
+fn _zero_result(raw: Scalar[DType.index]):
+    debug_assert(raw == 0, "non-zero result")
+
+
+@always_inline("nodebug")
 fn unsafe_decode_result[
     type: DType
 ](raw: Scalar[DType.index]) raises -> Scalar[type]:
@@ -299,6 +304,7 @@ fn unsafe_decode_none(raw: Scalar[DType.index]) raises:
         This should only be used with syscalls that return a `NoneType` value
         on success.
     """
-
-    _check_for_errors(raw)
-    debug_assert(raw == 0, "non-zero result")
+    if raw != 0:
+        # Linux returns negated error numbers in the range `[-4095; 0)`.
+        debug_assert(raw >= -4095 and raw < 0, "error number out of range")
+        raise str(raw)

@@ -177,14 +177,7 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
             to `io_uring_setup`.
         """
 
-        @parameter
-        if is_registered:
-            debug_assert(
-                unsafe_fd > 0, "invalid registered `io_uring` file descriptor"
-            )
-        else:
-            debug_assert(unsafe_fd > -1, "invalid `io_uring` file descriptor")
-
+        debug_assert(unsafe_fd > -1, "invalid `io_uring` file descriptor")
         self.fd = unsafe_fd
 
     @always_inline("nodebug")

@@ -1,3 +1,4 @@
+from .errno import _zero_result
 from .fd import UnsafeFd, unsafe_fd_as_arg
 from linux_raw.x86_64.general import __NR_close
 from linux_raw.x86_64.syscall import syscall
@@ -27,4 +28,4 @@ fn close(*, unsafe_fd: UnsafeFd):
     var res = syscall[__NR_close, Scalar[DType.index], uses_memory=False](
         unsafe_fd_as_arg(unsafe_fd)
     )
-    debug_assert(res == 0, "non-zero result")
+    _zero_result(res)
