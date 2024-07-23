@@ -12,12 +12,12 @@ from mojix.io_uring import (
     NO_ENTER_ARG,
 )
 from mojix.ctypes import c_void
-from mojix.fd import IoUringFd, OwnedFd, UnsafeFd
+from mojix.fd import IoUringOwnedFd, NoFd
 from mojix.errno import Errno
 from testing import *
 
 
-fn _io_uring_enter_get_events(fd: IoUringFd) raises -> UInt32:
+fn _io_uring_enter_get_events(fd: IoUringOwnedFd) raises -> UInt32:
     return io_uring_enter(
         fd,
         to_submit=0,
@@ -74,7 +74,7 @@ fn test_io_uring_register_enable_rings_error() raises:
     var params = IoUringParams()
     var fd = io_uring_setup[is_registered=False](16, params)
     with assert_raises(contains=str(Errno.EBADFD)):
-        _ = io_uring_register(fd[], NoRegisterArg.ENABLE_RINGS)
+        _ = io_uring_register(fd, NoRegisterArg.ENABLE_RINGS)
 
 
 fn test_io_uring_setup() raises:
@@ -88,15 +88,10 @@ fn test_io_uring_setup_no_sq_array() raises:
 fn test_io_uring_enter() raises:
     var params = IoUringParams()
     var fd = io_uring_setup[is_registered=False](16, params)
-    var res = _io_uring_enter_get_events(fd[])
-    assert_equal(res, 0)
+    assert_equal(_io_uring_enter_get_events(fd), 0)
 
 
 fn test_io_uring_enter_fail_with_invalid_fd() raises:
-    var params = IoUringParams()
-    var fd = io_uring_setup[is_registered=False](16, params)
-    var invalid_fd = IoUringFd[False, ImmutableStaticLifetime](
-        unsafe_fd=fd.as_unsafe_fd()
-    )
+    var invalid_fd = IoUringOwnedFd[False](unsafe_fd=NoFd)
     with assert_raises(contains=str(Errno.EBADF)):
         _ = _io_uring_enter_get_events(invalid_fd)

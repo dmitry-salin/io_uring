@@ -10,6 +10,7 @@ from mojix.io_uring import (
     IoUringParams,
     IoUringSetupFlags,
 )
+from mojix.utils import _size_eq, _align_eq
 
 
 struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
@@ -44,8 +45,8 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
             type is SQE64 or type is SQE128,
             "SQE must be equal to SQE64 or SQE128",
         ]()
-        constrained[sizeof[Sqe[type]]() == type.size]()
-        constrained[alignof[Sqe[type]]() == type.align]()
+        _size_eq[Sqe[type], type.size]()
+        _align_eq[Sqe[type], type.align]()
 
         self._head = sq_cq_mem.unsafe_ptr[UInt32](
             offset=params.sq_off.head, count=1

@@ -1,6 +1,7 @@
 from .mm import Region
 from .utils import AtomicOrdering, _atomic_load, _atomic_store
 from mojix.io_uring import Cqe, CQE, CQE16, CQE32, IoUringParams
+from mojix.utils import _size_eq, _align_eq
 from builtin.builtin_list import _lit_mut_cast
 
 
@@ -28,8 +29,8 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
             type is CQE16 or type is CQE32,
             "CQE must be equal to CQE16 or CQE32",
         ]()
-        constrained[sizeof[Cqe[type]]() == type.size]()
-        constrained[alignof[Cqe[type]]() == type.align]()
+        _size_eq[Cqe[type], type.size]()
+        _align_eq[Cqe[type], type.align]()
 
         self._head = sq_cq_mem.unsafe_ptr[UInt32](
             offset=params.cq_off.head, count=1

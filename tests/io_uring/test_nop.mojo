@@ -50,9 +50,7 @@ fn test_nop_skip_cqe() raises:
     for _sqe in ring.sq():
         count += 1
     assert_equal(count, 8)
-
-    var submitted = ring.submit_and_wait(wait_nr=0)
-    assert_equal(submitted, 8)
+    assert_equal(ring.submit_and_wait(wait_nr=0), count)
 
     var ts = Timespec(tv_sec=0, tv_nsec=100000000)
     # We expect a timeout and 0 cqes because none of the submitted sqes were

@@ -17,7 +17,7 @@ mojo test -I .
 
 Some tests do not work with the test framework and require a separate file:
 ```
-mojo -I . run_tests.mojo
+mojo -D MOJO_ENABLE_ASSERTIONS -I . run_tests.mojo
 ```
 
 ## Requirements

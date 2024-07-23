@@ -89,12 +89,12 @@ struct IoUring[
             ]()
             var cq_len = params.cq_off.cqes + params.cq_entries * cqe.size
             var sq_cq_mem = Region(
-                fd=fd.as_fd(),
+                fd=fd,
                 offset=IORING_OFF_SQ_RING,
                 len=Int(max(sq_len, cq_len).cast[DType.index]().value),
             )
             var sqes_mem = Region(
-                fd=fd.as_fd(),
+                fd=fd,
                 offset=IORING_OFF_SQES,
                 len=Int(
                     (params.sq_entries * sqe.size).cast[DType.index]().value
@@ -133,12 +133,6 @@ struct IoUring[
     # ===-------------------------------------------------------------------===#
     # Methods
     # ===-------------------------------------------------------------------===#
-
-    @always_inline
-    fn as_fd[
-        lifetime: ImmutableLifetime
-    ](ref [lifetime]self: IoUring[is_registered=False]) -> Fd[lifetime]:
-        return self.fd.as_fd()
 
     @always_inline
     fn sq(
@@ -243,7 +237,7 @@ struct IoUring[
 
     @always_inline
     fn register(self, arg: RegisterArg) raises -> UInt32:
-        return io_uring_register(self.fd[], arg)
+        return io_uring_register(self.fd, arg)
 
     @always_inline
     fn enter(
@@ -255,7 +249,7 @@ struct IoUring[
         arg: EnterArg,
     ) raises -> UInt32:
         return io_uring_enter(
-            self.fd[],
+            self.fd,
             to_submit=to_submit,
             min_complete=min_complete,
             flags=flags,

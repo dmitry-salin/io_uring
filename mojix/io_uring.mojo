@@ -38,10 +38,9 @@ fn io_uring_setup[
     """
     params.flags |= IoUringOwnedFd[is_registered].SETUP_FLAGS
 
-    var res = syscall[
-        __NR_io_uring_setup,
-        Scalar[DType.index],
-    ](sq_entries, UnsafePointer.address_of(params))
+    var res = syscall[__NR_io_uring_setup, Scalar[DType.index]](
+        sq_entries, UnsafePointer.address_of(params)
+    )
     return IoUringOwnedFd[is_registered](
         unsafe_fd=unsafe_decode_result[UnsafeFd.element_type](res)
     )
@@ -49,7 +48,7 @@ fn io_uring_setup[
 
 @always_inline
 fn io_uring_register(
-    fd: IoUringFd,
+    fd: IoUringOwnedFd,
     arg: RegisterArg,
 ) raises -> UInt32:
     """Registers/unregisters files or user buffers for asynchronous I/O.
@@ -65,8 +64,8 @@ fn io_uring_register(
     Raises:
         `Errno` if the syscall returned an error.
     """
-    var res = syscall[__NR_io_uring_register, Scalar[DType.index],](
-        fd,
+    var res = syscall[__NR_io_uring_register, Scalar[DType.index]](
+        fd.io_uring_fd(),
         arg.opcode.id | fd.REGISTER_FLAGS.value,
         arg.arg_unsafe_ptr,
         arg.nr_args,
@@ -76,7 +75,7 @@ fn io_uring_register(
 
 @always_inline
 fn io_uring_enter(
-    fd: IoUringFd,
+    fd: IoUringOwnedFd,
     *,
     to_submit: UInt32,
     min_complete: UInt32,
@@ -102,8 +101,8 @@ fn io_uring_enter(
     Raises:
         `Errno` if the syscall returned an error.
     """
-    var res = syscall[__NR_io_uring_enter, Scalar[DType.index],](
-        fd,
+    var res = syscall[__NR_io_uring_enter, Scalar[DType.index]](
+        fd.io_uring_fd(),
         to_submit,
         min_complete,
         flags | arg.flags | fd.ENTER_FLAGS,

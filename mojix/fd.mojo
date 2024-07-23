@@ -20,32 +20,23 @@ like `mmap`, where it indicates that the argument is omitted.
 """
 
 
-trait OwnedFileDescriptor(
-    FileDescriptor,
-    AsFileDescriptor,
-    AsUnsafeFileDescriptor,
+trait FileDescriptor(
     FromUnsafeFileDescriptor,
+    UnsafeFileDescriptor,
     Movable,
 ):
     ...
 
 
-trait FileDescriptor:
-    fn __getitem__[
-        lifetime: ImmutableLifetime
-    ](ref [lifetime]self) -> Fd[lifetime]:
+trait FromUnsafeFileDescriptor:
+    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
         ...
 
 
-trait AsFileDescriptor:
-    fn as_fd[lifetime: ImmutableLifetime](ref [lifetime]self) -> Fd[lifetime]:
-        ...
-
-
-trait AsUnsafeFileDescriptor:
+trait UnsafeFileDescriptor:
     """A trait to extract the unsafe file descriptor from an underlying object."""
 
-    fn as_unsafe_fd(self) -> UnsafeFd:
+    fn unsafe_fd(self) -> UnsafeFd:
         """Extracts the unsafe file descriptor.
 
         This function is typically used to "borrow" an owned file descriptor.
@@ -60,13 +51,8 @@ trait AsUnsafeFileDescriptor:
         ...
 
 
-trait FromUnsafeFileDescriptor:
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
-        ...
-
-
 @register_passable
-struct OwnedFd(OwnedFileDescriptor):
+struct OwnedFd(FileDescriptor):
     """An owned file descriptor that is automatically closed in its destructor.
     """
 
@@ -104,17 +90,7 @@ struct OwnedFd(OwnedFileDescriptor):
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__[
-        lifetime: ImmutableLifetime
-    ](ref [lifetime]self) -> Fd[lifetime]:
-        return Fd[lifetime](unsafe_fd=self.fd)
-
-    @always_inline("nodebug")
-    fn as_fd[lifetime: ImmutableLifetime](ref [lifetime]self) -> Fd[lifetime]:
-        return self.__getitem__()
-
-    @always_inline("nodebug")
-    fn as_unsafe_fd(self) -> UnsafeFd:
+    fn unsafe_fd(self) -> UnsafeFd:
         """Extracts an unsafe file descriptor.
 
         Returns:
@@ -122,41 +98,29 @@ struct OwnedFd(OwnedFileDescriptor):
         """
         return self.fd
 
-
-@register_passable("trivial")
-struct Fd[lifetime: ImmutableLifetime](AsUnsafeFileDescriptor):
-    var fd: UnsafeFd
-
-    # ===------------------------------------------------------------------=== #
-    # Life cycle methods
-    # ===------------------------------------------------------------------=== #
+    # ===-------------------------------------------------------------------===#
+    # Methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
-        self.fd = unsafe_fd
-
-    # ===------------------------------------------------------------------=== #
-    # Trait implementations
-    # ===------------------------------------------------------------------=== #
-
-    @always_inline("nodebug")
-    fn as_unsafe_fd(self) -> UnsafeFd:
-        """Extracts an unsafe file descriptor.
-
-        Returns:
-            The unsafe file descriptor.
-        """
-        return self.fd
+    fn io_uring_fd(self) -> IoUringFd[False]:
+        return IoUringFd[False](unsafe_fd=self.fd)
 
 
 @register_passable
-struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
+struct IoUringOwnedFd[is_registered: Bool](FileDescriptor):
     """An owned `io_uring` file descriptor that is automatically 
     closed/unregistered in its destructor.
     """
 
     alias SETUP_FLAGS = IoUringSetupFlags.REGISTERED_FD_ONLY | IoUringSetupFlags.NO_MMAP
         if is_registered else IoUringSetupFlags()
+
+    alias REGISTER_FLAGS = IoUringRegisterFlags.REGISTER_USE_REGISTERED_RING
+        if is_registered else IoUringRegisterFlags()
+
+    alias ENTER_FLAGS = IoUringEnterFlags.REGISTERED_RING if is_registered
+        else IoUringEnterFlags()
 
     var fd: UnsafeFd
     """The underlying file descriptor."""
@@ -188,7 +152,7 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
             var op = IoUringRsrcUpdate(self.fd.cast[UInt32.element_type](), 0, 0)
             var arg = op.as_register_arg(unsafe_opcode=IoUringRegisterOp.UNREGISTER_RING_FDS)
             try:
-                var res = io_uring_register(self[], arg)
+                var res = io_uring_register(self, arg)
                 debug_assert(res == 1, "failed to unregister file descriptor")
             except:
                 pass
@@ -198,14 +162,15 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
     # ===------------------------------------------------------------------=== #
     # Trait implementations
     # ===------------------------------------------------------------------=== #
-    
+
     @always_inline("nodebug")
-    fn as_unsafe_fd(self) -> UnsafeFd:
+    fn unsafe_fd(self) -> UnsafeFd:
         """Extracts an unsafe file descriptor.
 
         Returns:
             The unsafe file descriptor.
         """
+        constrained[not is_registered]()
         return self.fd
 
     # ===-------------------------------------------------------------------===#
@@ -213,27 +178,14 @@ struct IoUringOwnedFd[is_registered: Bool](AsUnsafeFileDescriptor, Movable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __getitem__[
-        lifetime: ImmutableLifetime
-    ](ref [lifetime]self) -> IoUringFd[is_registered, lifetime]:
-        return IoUringFd[is_registered, lifetime](unsafe_fd=self.fd)
-
-    @always_inline("nodebug")
-    fn as_fd[lifetime: ImmutableLifetime](ref [lifetime]self) -> Fd[lifetime]:
-        constrained[not is_registered]()
-        return Fd[lifetime](unsafe_fd=self.fd)
-
+    fn io_uring_fd(self) -> IoUringFd[is_registered]:
+        return IoUringFd[is_registered](unsafe_fd=self.fd)
 
 @register_passable("trivial")
-struct IoUringFd[is_registered: Bool, lifetime: ImmutableLifetime](
-    AsUnsafeFileDescriptor
+struct IoUringFd[is_registered: Bool](
+    FromUnsafeFileDescriptor,
+    UnsafeFileDescriptor
 ):
-    alias REGISTER_FLAGS = IoUringRegisterFlags.REGISTER_USE_REGISTERED_RING
-        if is_registered else IoUringRegisterFlags()
-
-    alias ENTER_FLAGS = IoUringEnterFlags.REGISTERED_RING if is_registered
-        else IoUringEnterFlags()
-
     alias SQE_FLAGS = IoUringSqeFlags.FIXED_FILE if is_registered
         else IoUringSqeFlags()
 
@@ -247,18 +199,12 @@ struct IoUringFd[is_registered: Bool, lifetime: ImmutableLifetime](
     fn __init__(inout self, *, unsafe_fd: UnsafeFd):
         self.fd = unsafe_fd
 
-    @always_inline("nodebug")
-    fn __init__[
-        lifetime: ImmutableLifetime
-    ](inout self: IoUringFd[False, lifetime], *, fd: Fd[lifetime]):
-        self.fd = fd.as_unsafe_fd()
-
     # ===------------------------------------------------------------------=== #
     # Trait implementations
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn as_unsafe_fd(self) -> UnsafeFd:
+    fn unsafe_fd(self) -> UnsafeFd:
         """Extracts an unsafe file descriptor.
 
         Returns:

@@ -11,7 +11,7 @@ from mojix.io_uring import (
     IoUringSetupFlags,
 )
 from mojix.errno import Errno
-from mojix.fd import Fd
+from mojix.fd import FileDescriptor
 from mojix.mm import (
     mmap,
     mmap_anonymous,
@@ -32,7 +32,9 @@ struct Region(Movable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self, *, fd: Fd, offset: UInt64, len: UInt) raises:
+    fn __init__[
+        Fd: FileDescriptor
+    ](inout self, *, fd: Fd, offset: UInt64, len: UInt) raises:
         self.ptr = mmap(
             unsafe_ptr=UnsafePointer[c_void](),
             len=len,
@@ -148,6 +150,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         else:
             sq_cq_size = HUGE_PAGE_SIZE
             flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
+
         self.sq_cq_mem = Region(
             len=Int(sq_cq_size.cast[DType.index]().value), flags=flags
         )

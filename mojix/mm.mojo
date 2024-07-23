@@ -1,5 +1,5 @@
 from .ctypes import c_void
-from .fd import Fd, NoFd
+from .fd import FileDescriptor, NoFd
 from .errno import unsafe_decode_ptr, unsafe_decode_none
 from linux_raw.x86_64.general import *
 from linux_raw.x86_64.general import __NR_mmap, __NR_munmap, __NR_madvise
@@ -8,7 +8,9 @@ from sys.info import is_64bit
 
 
 @always_inline
-fn mmap(
+fn mmap[
+    Fd: FileDescriptor
+](
     *,
     unsafe_ptr: UnsafePointer[c_void],
     len: UInt,
@@ -41,7 +43,7 @@ fn mmap(
     constrained[is_64bit()]()
 
     var res = syscall[__NR_mmap, UnsafePointer[c_void]](
-        unsafe_ptr, len, prot, flags, fd, offset
+        unsafe_ptr, len, prot, flags, fd.unsafe_fd(), offset
     )
     unsafe_decode_ptr(res)
     return res
