@@ -148,7 +148,7 @@ struct SocketAddressV4:
         return self.ip.octets
 
 
-alias RawSocketType = UInt32
+alias RawSocketType = c_uint
 
 
 @value
@@ -246,7 +246,7 @@ struct Protocol(Defaultable):
     alias MH = Self {id: IPPROTO_MH}
     alias ROUTING = Self {id: IPPROTO_ROUTING}
 
-    var id: UInt32
+    var id: c_uint
 
     @always_inline("nodebug")
     fn __init__(inout self):
@@ -267,7 +267,7 @@ struct SendFlags:
     alias NOSIGNAL = Self(MSG_NOSIGNAL)
     alias OOB = Self(MSG_OOB)
 
-    var value: UInt32
+    var value: c_uint
 
 
 @value
@@ -283,4 +283,4 @@ struct RecvFlags:
     alias TRUNC = Self(MSG_TRUNC)
     alias WAITALL = Self(MSG_WAITALL)
 
-    var value: UInt32
+    var value: c_uint

@@ -27,7 +27,7 @@ fn _atomic_load[
     ordering: AtomicOrdering
 ](unsafe_ptr: UnsafePointer[UInt32]) -> UInt32:
     var addr = unsafe_ptr.bitcast[
-        __mlir_type[`!pop.scalar<`, UInt32.element_type.value, `>`]
+        __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`]
     ]().address
 
     # TODO: use atomic load when it becomes available.
@@ -36,7 +36,7 @@ fn _atomic_load[
         return __mlir_op.`pop.atomic.rmw`[
             bin_op = __mlir_attr.`#pop<bin_op add>`,
             ordering = __mlir_attr.`#pop<atomic_ordering acquire>`,
-            _type = __mlir_type[`!pop.scalar<`, UInt32.element_type.value, `>`],
+            _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
         ](
             addr,
             UInt32(0).value,
@@ -45,7 +45,7 @@ fn _atomic_load[
         return __mlir_op.`pop.atomic.rmw`[
             bin_op = __mlir_attr.`#pop<bin_op add>`,
             ordering = __mlir_attr.`#pop<atomic_ordering monotonic>`,
-            _type = __mlir_type[`!pop.scalar<`, UInt32.element_type.value, `>`],
+            _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
         ](
             addr,
             UInt32(0).value,
@@ -61,10 +61,10 @@ fn _atomic_store(unsafe_ptr: UnsafePointer[UInt32], rhs: UInt32):
     _ = __mlir_op.`pop.atomic.rmw`[
         bin_op = __mlir_attr.`#pop<bin_op xchg>`,
         ordering = __mlir_attr.`#pop<atomic_ordering release>`,
-        _type = __mlir_type[`!pop.scalar<`, UInt32.element_type.value, `>`],
+        _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
     ](
         unsafe_ptr.bitcast[
-            __mlir_type[`!pop.scalar<`, UInt32.element_type.value, `>`]
+            __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`]
         ]().address,
         rhs.value,
     )

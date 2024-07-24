@@ -1,4 +1,4 @@
-from .ctypes import c_void
+from .ctypes import c_void, c_uint
 from .fd import FileDescriptor, NoFd
 from .errno import unsafe_decode_ptr, unsafe_decode_none
 from linux_raw.x86_64.general import *
@@ -153,7 +153,7 @@ struct MapFlags(Defaultable):
     alias SYNC = Self(MAP_SYNC)
     alias UNINITIALIZED = Self(MAP_UNINITIALIZED)
 
-    var value: UInt32
+    var value: c_uint
 
     @always_inline("nodebug")
     fn __init__(inout self):
@@ -191,7 +191,7 @@ struct ProtFlags(Defaultable):
     alias WRITE = Self(PROT_WRITE)
     alias EXEC = Self(PROT_EXEC)
 
-    var value: UInt32
+    var value: c_uint
 
     @always_inline("nodebug")
     fn __init__(inout self):
@@ -240,4 +240,4 @@ struct Advice:
     alias DONTNEED_LOCKED = Self {id: MADV_DONTNEED_LOCKED}
     alias COLLAPSE = Self {id: MADV_COLLAPSE}
 
-    var id: UInt32
+    var id: c_uint

@@ -70,7 +70,7 @@ fn io_uring_register(
         arg.arg_unsafe_ptr,
         arg.nr_args,
     )
-    return unsafe_decode_result[UInt32.element_type](res)
+    return unsafe_decode_result[DType.uint32](res)
 
 
 @always_inline
@@ -109,7 +109,7 @@ fn io_uring_enter(
         arg.arg_unsafe_ptr,
         arg.size,
     )
-    return unsafe_decode_result[UInt32.element_type](res)
+    return unsafe_decode_result[DType.uint32](res)
 
 
 @value

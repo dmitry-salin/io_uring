@@ -4,7 +4,7 @@ from .modes import PollingMode, NOPOLL, IOPOLL, SQPOLL
 from .mm import MemoryMapping, Region
 from .params import Params
 from mojix.ctypes import c_void
-from mojix.fd import IoUringOwnedFd, Fd
+from mojix.fd import IoUringOwnedFd
 from mojix.io_uring import (
     Sqe,
     SQE,
@@ -91,12 +91,12 @@ struct IoUring[
             var sq_cq_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQ_RING,
-                len=Int(max(sq_len, cq_len).cast[DType.index]().value),
+                len=UInt(max(sq_len, cq_len).cast[DType.index]().value),
             )
             var sqes_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQES,
-                len=Int(
+                len=UInt(
                     (params.sq_entries * sqe.size).cast[DType.index]().value
                 ),
             )

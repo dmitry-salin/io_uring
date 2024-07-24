@@ -219,7 +219,7 @@ struct Connect[type: SQE, lifetime: MutableLifetime](SqeAttrs):
             IoUringOp.CONNECT,
             fd,
             int(addr.addr_unsafe_ptr()),
-            addr.addr_len().cast[UInt64.element_type](),
+            addr.addr_len().cast[DType.uint64](),
         )
         self.sqe = sqe
 

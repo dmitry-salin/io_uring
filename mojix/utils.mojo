@@ -24,9 +24,7 @@ fn _align_eq[T: AnyType, align: IntLiteral]():
 
 
 @always_inline("nodebug")
-fn _to_be[
-    type: DType, simd_width: Int
-](value: SIMD[type, simd_width]) -> SIMD[type, simd_width]:
+fn _to_be[type: DType, size: Int](value: SIMD[type, size]) -> SIMD[type, size]:
     @parameter
     if is_big_endian():
         return value

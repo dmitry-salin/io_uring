@@ -95,7 +95,7 @@ struct Region(Movable):
         if len[0] > self.len:
             raise "offset is out of bounds"
         var ptr = self.ptr.offset(int(offset))
-        if int(ptr) & (alignof[T]() - 1) != 0:
+        if int(ptr) & (alignof[T]() - 1):
             raise "region is not properly aligned"
         return ptr.bitcast[T]()
 
@@ -141,7 +141,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
             flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
 
         self.sqes_mem = Region(
-            len=Int(sqes_size.cast[DType.index]().value), flags=flags
+            len=UInt(sqes_size.cast[DType.index]().value), flags=flags
         )
 
         flags = MapFlags()
@@ -152,7 +152,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
             flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
 
         self.sq_cq_mem = Region(
-            len=Int(sq_cq_size.cast[DType.index]().value), flags=flags
+            len=UInt(sq_cq_size.cast[DType.index]().value), flags=flags
         )
 
         params.cq_off.user_addr = self.sq_cq_mem.addr()
