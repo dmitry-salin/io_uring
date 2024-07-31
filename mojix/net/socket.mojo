@@ -11,8 +11,7 @@ from .types import (
 from mojix.fd import OwnedFd, FileDescriptor
 
 
-# With inlining this syscall fails, needs investigation.
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -23,7 +22,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), Protocol())
 
 
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -35,7 +34,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), protocol)
 
 
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,

@@ -58,9 +58,10 @@ struct SocketAddressArgV4(SocketAddress):
             AddressFamily.INET.id,
             _to_be(addr.port),
             in_addr(
-                __be32.load[alignment = alignof[addr.Octets]()](
-                    addr.octets().unsafe_ptr().bitcast[__be32](), 0
-                )
+                addr.octets()
+                .unsafe_ptr()
+                .bitcast[__be32]()
+                .load[alignment = alignof[addr.Octets]()]()
             ),
             InlineArray[c_uchar, 8](0),
         )

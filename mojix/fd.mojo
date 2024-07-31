@@ -10,6 +10,7 @@ from .io_uring import (
     IoUringRsrcUpdate
 )
 
+
 alias UnsafeFd = c_int
 """An unsafe file descriptor.
  It represents identifiers that can be passed to low-level OS APIs.
@@ -180,6 +181,7 @@ struct IoUringOwnedFd[is_registered: Bool](FileDescriptor):
     @always_inline("nodebug")
     fn io_uring_fd(self) -> IoUringFd[is_registered]:
         return IoUringFd[is_registered](unsafe_fd=self.fd)
+
 
 @register_passable("trivial")
 struct IoUringFd[is_registered: Bool](

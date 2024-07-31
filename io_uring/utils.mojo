@@ -127,7 +127,5 @@ fn _add_with_overflow(lhs: UInt32, rhs: UInt32) -> (UInt32, Bool):
     var result = llvm_intrinsic[
         "llvm.uadd.with.overflow",
         _RegisterPackType[UInt32, Bool],
-        UInt32,
-        UInt32,
     ](lhs, rhs)
     return (result[0], result[1])

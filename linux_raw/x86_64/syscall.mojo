@@ -68,9 +68,9 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
+    arg0_type: AnyTrivialRegType, //,
     nr: IntLiteral,
     result_type: AnyTrivialRegType,
-    arg0_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
@@ -98,10 +98,10 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
+    arg0_type: AnyTrivialRegType,
+    arg1_type: AnyTrivialRegType, //,
     nr: IntLiteral,
     result_type: AnyTrivialRegType,
-    arg0_type: AnyTrivialRegType,
-    arg1_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
@@ -130,11 +130,11 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
-    nr: IntLiteral,
-    result_type: AnyTrivialRegType,
     arg0_type: AnyTrivialRegType,
     arg1_type: AnyTrivialRegType,
-    arg2_type: AnyTrivialRegType,
+    arg2_type: AnyTrivialRegType, //,
+    nr: IntLiteral,
+    result_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
@@ -164,12 +164,12 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
-    nr: IntLiteral,
-    result_type: AnyTrivialRegType,
     arg0_type: AnyTrivialRegType,
     arg1_type: AnyTrivialRegType,
     arg2_type: AnyTrivialRegType,
-    arg3_type: AnyTrivialRegType,
+    arg3_type: AnyTrivialRegType, //,
+    nr: IntLiteral,
+    result_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
@@ -202,13 +202,13 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
-    nr: IntLiteral,
-    result_type: AnyTrivialRegType,
     arg0_type: AnyTrivialRegType,
     arg1_type: AnyTrivialRegType,
     arg2_type: AnyTrivialRegType,
     arg3_type: AnyTrivialRegType,
-    arg4_type: AnyTrivialRegType,
+    arg4_type: AnyTrivialRegType, //,
+    nr: IntLiteral,
+    result_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
@@ -246,14 +246,14 @@ fn syscall[
 
 @always_inline("nodebug")
 fn syscall[
-    nr: IntLiteral,
-    result_type: AnyTrivialRegType,
     arg0_type: AnyTrivialRegType,
     arg1_type: AnyTrivialRegType,
     arg2_type: AnyTrivialRegType,
     arg3_type: AnyTrivialRegType,
     arg4_type: AnyTrivialRegType,
-    arg5_type: AnyTrivialRegType,
+    arg5_type: AnyTrivialRegType, //,
+    nr: IntLiteral,
+    result_type: AnyTrivialRegType,
     /,
     *,
     has_side_effect: Bool = True,
