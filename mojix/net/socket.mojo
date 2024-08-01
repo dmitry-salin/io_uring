@@ -52,7 +52,7 @@ fn bind[Fd: FileDescriptor](fd: Fd, addr: SocketAddressV4) raises:
     """Binds a socket to an IPV4 address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
-    _bind(fd, addr.Arg(addr))
+    _bind(fd, addr.arg())
 
 
 @always_inline("nodebug")

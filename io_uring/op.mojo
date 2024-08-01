@@ -202,7 +202,7 @@ struct Connect[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         fd: IoUringFd,
         addr: SocketAddressV4,
     ):
-        self.__init__(sqe, fd, addr.Arg(addr))
+        self.__init__(sqe, fd, addr.arg())
 
     @always_inline("nodebug")
     fn __init__[

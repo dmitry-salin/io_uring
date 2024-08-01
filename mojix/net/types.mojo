@@ -79,6 +79,9 @@ struct SocketAddressArgV4(SocketAddress):
         return sizeof[sockaddr_in]()
 
 
+alias SocketAddressArgMutV4 = SocketAddressArgMut[SocketAddressArgV4]
+
+
 struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
     var addr: Addr
     var len: socklen_t
@@ -123,8 +126,6 @@ struct IpAddressV4:
 @value
 struct SocketAddressV4:
     alias Octets = IpAddressV4.Octets
-    alias Arg = SocketAddressArgV4
-    alias ArgMut = SocketAddressArgMut[Self.Arg]
 
     var ip: IpAddressV4
     var port: UInt16
@@ -141,12 +142,25 @@ struct SocketAddressV4:
         self.port = port
 
     # ===-------------------------------------------------------------------===#
+    # Factory methods
+    # ===-------------------------------------------------------------------===#
+
+    @staticmethod
+    @always_inline("nodebug")
+    fn arg_mut() -> SocketAddressArgMutV4 as arg:
+        arg = SocketAddressArgMutV4()
+
+    # ===-------------------------------------------------------------------===#
     # Methods
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
     fn octets(self) -> ref [__lifetime_of(self)] Self.Octets:
         return self.ip.octets
+
+    @always_inline("nodebug")
+    fn arg(self) -> SocketAddressArgV4 as arg:
+        arg = SocketAddressArgV4(self)
 
 
 alias RawSocketType = c_uint
