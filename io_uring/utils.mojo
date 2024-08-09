@@ -1,4 +1,4 @@
-from sys.intrinsics import _RegisterPackType
+from sys.intrinsics import _RegisterPackType, llvm_intrinsic
 
 @nonmaterializable(NoneType)
 @register_passable("trivial")

@@ -1,5 +1,6 @@
 from bit import byte_swap
 from sys.info import is_big_endian
+from linux_raw.utils import DTypeArray
 
 
 @always_inline("nodebug")
@@ -16,6 +17,11 @@ fn _size_eq[T: AnyType, I: AnyType]():
 @always_inline("nodebug")
 fn _size_eq[T: AnyType, size: IntLiteral]():
     constrained[sizeof[T]() == size]()
+
+
+@always_inline("nodebug")
+fn _align_eq[T: AnyType, I: AnyType]():
+    constrained[alignof[T]() == alignof[I]()]()
 
 
 @always_inline("nodebug")

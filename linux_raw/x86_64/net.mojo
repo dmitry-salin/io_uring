@@ -1,5 +1,5 @@
-from linux_raw.ctypes import c_ushort, c_uint, c_uchar
-
+from ..ctypes import c_ushort, c_uint, c_uchar
+from ..utils import DTypeArray
 
 alias SOCK_STREAM = 1
 alias SOCK_DGRAM = 2
@@ -131,12 +131,12 @@ struct sockaddr_in:
     var sin_family: __kernel_sa_family_t
     var sin_port: __be16
     var sin_addr: in_addr
-    var __pad: InlineArray[c_uchar, 8]
+    var __pad: DTypeArray[c_uchar.element_type, 8]
 
 
 @value
 struct in6_addr:
-    var in6_u: InlineArray[__u8, 16]
+    var in6_u: DTypeArray[__u8.element_type, 16]
 
 
 @value

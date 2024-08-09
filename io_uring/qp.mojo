@@ -28,6 +28,7 @@ from mojix.io_uring import (
     EnterArg,
     NO_ENTER_ARG,
 )
+from mojix.utils import DTypeArray
 
 
 struct IoUring[
@@ -58,7 +59,7 @@ struct IoUring[
             params.sq_thread_idle,
             IoUringFeatureFlags(),
             params.wq_fd,
-            InlineArray[UInt32, 3](0),
+            DTypeArray[DType.uint32, 3](),
             io_sqring_offsets(),
             io_cqring_offsets(),
         )

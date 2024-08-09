@@ -85,24 +85,22 @@ fn _prep_addr(
 
 
 trait SqeAttrs:
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         ...
 
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         ...
 
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         ...
 
 
-@register_passable("trivial")
-struct Accept[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+trait Operation(SqeAttrs, Movable):
+    ...
+
+
+@register_passable
+struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
     """Accept a new connection on a socket, equivalent to `accept4(2)`."""
 
     alias SINCE = 5.5
@@ -149,37 +147,29 @@ struct Accept[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn socket_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: SocketFlags) -> ref [lifetime] Self:
+    fn socket_flags(owned self, flags: SocketFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Connect[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
     """Connect a socket, equivalent to `connect(2)`."""
 
     alias SINCE = 5.5
@@ -224,29 +214,23 @@ struct Connect[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Nop[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Nop[type: SQE, lifetime: MutableLifetime](Operation):
     """Do not perform any I/O.
     A no-op is more useful than may appear at first glance.
     For example, you could set `IOSQE_IO_DRAIN_BIT` using `sqe_flags()`,
@@ -271,29 +255,23 @@ struct Nop[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Read[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Read[type: SQE, lifetime: MutableLifetime](Operation):
     """Read, equivalent to `pread(2)`."""
 
     alias SINCE = 5.6
@@ -328,58 +306,44 @@ struct Read[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn ioprio[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn ioprio(owned self, value: UInt16) -> Self:
         self.sqe[].ioprio = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn offset[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn offset(owned self, value: UInt64) -> Self:
         self.sqe[].off_or_addr2_or_cmd_op = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn rw_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: ReadWriteFlags) -> ref [lifetime] Self:
+    fn rw_flags(owned self, flags: ReadWriteFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn buf_group[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn buf_group(owned self, value: UInt16) -> Self:
         self.sqe[].buf_index_or_buf_group = value
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Recv[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Recv[type: SQE, lifetime: MutableLifetime](Operation):
     """Receive a message from a socket, equivalent to `recv(2)`."""
 
     alias SINCE = 5.6
@@ -414,44 +378,34 @@ struct Recv[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn recv_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: RecvFlags) -> ref [lifetime] Self:
+    fn recv_flags(owned self, flags: RecvFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn buf_group[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn buf_group(owned self, value: UInt16) -> Self:
         self.sqe[].buf_index_or_buf_group = value
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Send[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Send[type: SQE, lifetime: MutableLifetime](Operation):
     """Send a message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 5.6
@@ -486,37 +440,29 @@ struct Send[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn send_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: SendFlags) -> ref [lifetime] Self:
+    fn send_flags(owned self, flags: SendFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct SendZc[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct SendZc[type: SQE, lifetime: MutableLifetime](Operation):
     """Send a zerocopy message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 6.0
@@ -551,52 +497,40 @@ struct SendZc[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn send_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: SendFlags) -> ref [lifetime] Self:
+    fn send_flags(owned self, flags: SendFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn buf_index[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn buf_index(owned self, value: UInt16) -> Self:
         self.sqe[].buf_index_or_buf_group = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn send_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSendFlags) -> ref [lifetime] Self:
+    fn send_flags(owned self, flags: IoUringSendFlags) -> Self:
         _size_eq[__type_of(flags), UInt16]()
         self.sqe[].ioprio = flags.value
-        return self
+        return self^
 
 
-@register_passable("trivial")
-struct Write[type: SQE, lifetime: MutableLifetime](SqeAttrs):
+@register_passable
+struct Write[type: SQE, lifetime: MutableLifetime](Operation):
     """Write, equivalent to `pwrite(2)`."""
 
     alias SINCE = 5.6
@@ -631,44 +565,32 @@ struct Write[type: SQE, lifetime: MutableLifetime](SqeAttrs):
         self.sqe = sqe
 
     @always_inline("nodebug")
-    fn user_data[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn user_data(owned self, value: UInt64) -> Self:
         self.sqe[].user_data = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn personality[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn personality(owned self, value: UInt16) -> Self:
         self.sqe[].personality = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn sqe_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: IoUringSqeFlags) -> ref [lifetime] Self:
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
         self.sqe[].flags |= flags
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn ioprio[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt16) -> ref [lifetime] Self:
+    fn ioprio(owned self, value: UInt16) -> Self:
         self.sqe[].ioprio = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn offset[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, value: UInt64) -> ref [lifetime] Self:
+    fn offset(owned self, value: UInt64) -> Self:
         self.sqe[].off_or_addr2_or_cmd_op = value
-        return self
+        return self^
 
     @always_inline("nodebug")
-    fn rw_flags[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, flags: ReadWriteFlags) -> ref [lifetime] Self:
+    fn rw_flags(owned self, flags: ReadWriteFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
-        return self
+        return self^

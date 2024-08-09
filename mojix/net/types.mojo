@@ -9,7 +9,7 @@ from linux_raw.x86_64.net import (
     in_addr,
 )
 from linux_raw.x86_64.net import *
-
+from linux_raw.utils import DTypeArray
 
 alias SOCK_CLOEXEC = O_CLOEXEC
 alias SOCK_NONBLOCK = O_NONBLOCK
@@ -46,24 +46,26 @@ struct SocketAddressArgV4(SocketAddress):
     fn __init__(inout self):
         _size_eq[sockaddr_in, 16]()
         _align_eq[sockaddr_in, 4]()
-        self.addr = sockaddr_in(0, 0, in_addr(0), InlineArray[c_uchar, 8](0))
+        self.addr = sockaddr_in(
+            0, 0, in_addr(0), DTypeArray[c_uchar.element_type, 8]()
+        )
 
     @always_inline("nodebug")
     fn __init__(inout self, addr: SocketAddressV4):
         _size_eq[sockaddr_in, 16]()
         _align_eq[sockaddr_in, 4]()
         _size_eq[addr.Octets, __be32]()
+        _align_eq[addr.Octets, __be32]()
 
         self.addr = sockaddr_in(
             AddressFamily.INET.id,
             _to_be(addr.port),
             in_addr(
-                addr.octets()
-                .unsafe_ptr()
+                UnsafePointer.address_of(addr.octets())
                 .bitcast[__be32]()
                 .load[alignment = alignof[addr.Octets]()]()
             ),
-            InlineArray[c_uchar, 8](0),
+            DTypeArray[c_uchar.element_type, 8](),
         )
 
     # ===------------------------------------------------------------------=== #
@@ -110,7 +112,7 @@ struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
 
 @value
 struct IpAddressV4:
-    alias Octets = InlineArray[UInt8, 4]
+    alias Octets = SIMD[DType.uint8, 4]
 
     var octets: Self.Octets
 

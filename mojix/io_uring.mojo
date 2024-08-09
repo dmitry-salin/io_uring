@@ -9,6 +9,7 @@ from linux_raw.x86_64.general import (
     __NR_io_uring_enter,
 )
 from linux_raw.x86_64.syscall import syscall
+from linux_raw.utils import DTypeArray
 
 
 @always_inline
@@ -121,7 +122,7 @@ struct IoUringParams(Defaultable):
     var sq_thread_idle: UInt32
     var features: IoUringFeatureFlags
     var wq_fd: UInt32
-    var resv: InlineArray[UInt32, 3]
+    var resv: DTypeArray[DType.uint32, 3]
     var sq_off: io_sqring_offsets
     var cq_off: io_cqring_offsets
 
@@ -134,7 +135,7 @@ struct IoUringParams(Defaultable):
         self.sq_thread_idle = 0
         self.features = IoUringFeatureFlags()
         self.wq_fd = 0
-        self.resv = InlineArray[UInt32, 3](0)
+        self.resv = DTypeArray[DType.uint32, 3]()
         self.sq_off = io_sqring_offsets()
         self.cq_off = io_cqring_offsets()
 
@@ -236,12 +237,12 @@ struct CQE:
 @value
 struct addr3_struct(Defaultable):
     var addr3: UInt64
-    var __pad2: InlineArray[UInt64, 1]
+    var __pad2: DTypeArray[DType.uint64, 1]
 
     @always_inline("nodebug")
     fn __init__(inout self):
         self.addr3 = 0
-        self.__pad2 = InlineArray[UInt64, 1](0)
+        self.__pad2 = DTypeArray[DType.uint64, 1]()
 
 
 @value
@@ -249,7 +250,7 @@ struct Sqe[type: SQE]:
     """[Linux]: https://github.com/torvalds/linux/blob/v6.7/include/uapi/linux/io_uring.h#L30.
     """
 
-    alias Array = InlineArray[UInt8, type.array_size]
+    alias Array = DTypeArray[DType.uint8, type.array_size]
 
     var opcode: IoUringOp
     var flags: IoUringSqeFlags
@@ -269,9 +270,9 @@ struct Sqe[type: SQE]:
     @always_inline("nodebug")
     fn cmd(
         inout self: Sqe[SQE128],
-    ) -> ref [__lifetime_of(self)] InlineArray[UInt8, 80]:
+    ) -> ref [__lifetime_of(self)] DTypeArray[DType.uint8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
-            InlineArray[UInt8, 80]
+            DTypeArray[DType.uint8, 80]
         ]()[]
 
 
@@ -283,12 +284,12 @@ struct Cqe[type: CQE]:
     var user_data: UInt64
     var res: Int32
     var flags: IoUringCqeFlags
-    var _big_cqe: InlineArray[UInt64, type.array_size]
+    var _big_cqe: DTypeArray[DType.uint64, type.array_size]
 
     @always_inline("nodebug")
     fn cmd(
         self: Cqe[CQE32],
-    ) -> ref [__lifetime_of(self)] InlineArray[UInt64, CQE32.array_size]:
+    ) -> ref [__lifetime_of(self)] DTypeArray[DType.uint64, CQE32.array_size]:
         return self._big_cqe
 
 
