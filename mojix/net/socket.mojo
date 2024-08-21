@@ -11,7 +11,7 @@ from .types import (
 from mojix.fd import OwnedFd, FileDescriptor
 
 
-@always_inline("nodebug")
+@no_inline
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -22,7 +22,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), Protocol())
 
 
-@always_inline("nodebug")
+@no_inline
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -34,7 +34,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), protocol)
 
 
-@always_inline("nodebug")
+@no_inline
 fn socket(
     domain: AddressFamily,
     type: SocketType,

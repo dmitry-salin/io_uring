@@ -180,7 +180,6 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
         return _atomic_load[AtomicOrdering.RELAXED](self._flags)
 
 
-@register_passable
 struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
     Sized, Boolable
 ):
@@ -193,6 +192,10 @@ struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
     @always_inline
     fn __init__(inout self, ref [sq_lifetime]sq: Sq[type, polling]):
         self.sq = sq
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        self.sq = existing.sq
 
     # ===------------------------------------------------------------------=== #
     # Operator dunders

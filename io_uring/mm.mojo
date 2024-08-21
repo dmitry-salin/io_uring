@@ -21,6 +21,7 @@ from mojix.mm import (
     MapFlags,
     Advice,
 )
+from sys.info import alignof, sizeof
 
 
 struct Region(Movable):

@@ -120,7 +120,6 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
         return _atomic_load[AtomicOrdering.ACQUIRE](self._tail)
 
 
-@register_passable
 struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
     var cq: Reference[Cq[type], cq_lifetime]
 
@@ -131,6 +130,10 @@ struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
     @always_inline
     fn __init__(inout self, ref [cq_lifetime]cq: Cq[type]):
         self.cq = cq
+
+    @always_inline
+    fn __moveinit__(inout self, owned existing: Self):
+        self.cq = existing.cq
 
     @always_inline
     fn __del__(owned self):

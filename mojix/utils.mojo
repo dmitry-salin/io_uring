@@ -1,5 +1,5 @@
 from bit import byte_swap
-from sys.info import is_big_endian
+from sys.info import alignof, sizeof, is_big_endian
 from linux_raw.utils import DTypeArray
 
 

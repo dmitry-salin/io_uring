@@ -10,6 +10,8 @@ from linux_raw.x86_64.net import (
 )
 from linux_raw.x86_64.net import *
 from linux_raw.utils import DTypeArray
+from sys.info import alignof, sizeof
+
 
 alias SOCK_CLOEXEC = O_CLOEXEC
 alias SOCK_NONBLOCK = O_NONBLOCK

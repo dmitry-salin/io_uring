@@ -29,6 +29,7 @@ from mojix.io_uring import (
     NO_ENTER_ARG,
 )
 from mojix.utils import DTypeArray
+from sys.info import sizeof
 
 
 struct IoUring[
