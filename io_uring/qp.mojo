@@ -52,7 +52,7 @@ struct IoUring[
         self.__init__(sq_entries=sq_entries, params=Params())
 
     fn __init__(inout self, *, sq_entries: UInt32, params: Params) raises:
-        var io_uring_params = IoUringParams(
+        io_uring_params = IoUringParams(
             0,
             params._cq_entries,
             params.flags,
@@ -83,19 +83,17 @@ struct IoUring[
             self.mem = MemoryMapping[sqe, cqe](sq_entries, params)
             self.fd = io_uring_setup[is_registered](sq_entries, params)
         else:
-            var fd = io_uring_setup[is_registered](sq_entries, params)
+            fd = io_uring_setup[is_registered](sq_entries, params)
             if not params.features & IoUringFeatureFlags.SINGLE_MMAP:
                 raise "system outdated"
-            var sq_len = params.sq_off.array + params.sq_entries * sizeof[
-                UInt32
-            ]()
-            var cq_len = params.cq_off.cqes + params.cq_entries * cqe.size
-            var sq_cq_mem = Region(
+            sq_len = params.sq_off.array + params.sq_entries * sizeof[UInt32]()
+            cq_len = params.cq_off.cqes + params.cq_entries * cqe.size
+            sq_cq_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQ_RING,
                 len=UInt(max(sq_len, cq_len).cast[DType.index]().value),
             )
-            var sqes_mem = Region(
+            sqes_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQES,
                 len=UInt(
@@ -161,10 +159,10 @@ struct IoUring[
     fn submit_and_wait(
         inout self, *, wait_nr: UInt32, arg: EnterArg
     ) raises -> UInt32:
-        var submitted = self._sq.flush()
-        var flags = IoUringEnterFlags()
+        submitted = self._sq.flush()
+        flags = IoUringEnterFlags()
 
-        var cq_needs_enter = wait_nr > 0 or self.cq_needs_enter()
+        cq_needs_enter = wait_nr > 0 or self.cq_needs_enter()
 
         if self.sq_needs_enter(submitted, flags) or cq_needs_enter:
             if cq_needs_enter:

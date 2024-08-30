@@ -90,12 +90,12 @@ struct Region(Movable):
         constrained[alignof[T]() > 0]()
         constrained[sizeof[c_void]() == 1]()
 
-        var len = _add_with_overflow(offset, count * sizeof[T]())
+        len = _add_with_overflow(offset, count * sizeof[T]())
         if len[1]:
             raise "len overflow"
         if len[0] > self.len:
             raise "offset is out of bounds"
-        var ptr = self.ptr.offset(int(offset))
+        ptr = self.ptr.offset(int(offset))
         if int(ptr) & (alignof[T]() - 1):
             raise "region is not properly aligned"
         return ptr.bitcast[T]()
@@ -121,20 +121,24 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
     fn __init__(
         inout self, sq_entries: UInt32, inout params: IoUringParams
     ) raises:
-        var entries = Entries(sq_entries=sq_entries, params=params)
+        entries = Entries(sq_entries=sq_entries, params=params)
         # FIXME: Get the actual page size value at runtime.
         alias page_size = 4096
-        var sqes_size = entries.sq_entries * sqe.size
-        var sq_array_size = 0 if params.flags & IoUringSetupFlags.NO_SQARRAY else entries.sq_entries * sizeof[
-            UInt32
-        ]()
-        var sq_cq_size = cqe.rings_size + entries.cq_entries * cqe.size + sq_array_size
+        sqes_size = entries.sq_entries * sqe.size
+        sq_array_size = (
+            0 if params.flags
+            & IoUringSetupFlags.NO_SQARRAY else entries.sq_entries
+            * sizeof[UInt32]()
+        )
+        sq_cq_size = (
+            cqe.rings_size + entries.cq_entries * cqe.size + sq_array_size
+        )
 
         alias HUGE_PAGE_SIZE = 1 << 21
         if sqes_size > HUGE_PAGE_SIZE or sq_cq_size > HUGE_PAGE_SIZE:
             raise str(Errno.ENOMEM)
 
-        var flags = MapFlags()
+        flags = MapFlags()
         if sqes_size <= page_size:
             sqes_size = page_size
         else:

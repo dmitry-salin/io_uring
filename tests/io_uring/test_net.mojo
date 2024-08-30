@@ -8,13 +8,13 @@ from testing import assert_equal, assert_raises
 
 
 fn test_accept_timeout() raises:
-    var ring = IoUring[](sq_entries=8)
+    ring = IoUring[](sq_entries=8)
 
-    var fd = socket(AddressFamily.INET, SocketType.STREAM)
+    fd = socket(AddressFamily.INET, SocketType.STREAM)
     bind(fd, SocketAddressV4(0, 0, 0, 0, port=1111))
     listen(fd, backlog=64)
 
-    var sq = ring.sq()
+    sq = ring.sq()
     if sq:
         _ = Accept(sq.__next__(), fd)
     else:
@@ -22,7 +22,7 @@ fn test_accept_timeout() raises:
 
     assert_equal(ring.submit_and_wait(wait_nr=0), 1)
 
-    var ts = Timespec(tv_sec=0, tv_nsec=100000000)
+    ts = Timespec(tv_sec=0, tv_nsec=100000000)
     with assert_raises(contains=str(Errno.ETIME)):
         _ = ring.cq(wait_nr=1, arg=WaitArg(ts).as_enter_arg())
 

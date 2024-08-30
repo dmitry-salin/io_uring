@@ -12,7 +12,7 @@ This repo includes source code for:
 
 ## Tests
 ```
-mojo test -I .
+mojo test -I . -D MOJO_ENABLE_ASSERTIONS
 ```
 
 Some tests do not work with the test framework and require a separate file:

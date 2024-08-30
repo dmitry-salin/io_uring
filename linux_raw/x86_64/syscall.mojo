@@ -23,7 +23,7 @@ fn _syscall_constraints[
 
     @parameter
     fn inputs() -> StringLiteral:
-        var regs = syscall_nr_reg
+        regs = syscall_nr_reg
 
         @parameter
         for i in range(args_nr):

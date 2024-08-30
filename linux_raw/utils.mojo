@@ -34,7 +34,7 @@ struct DTypeArray[
     fn __init__(inout self):
         """Constructs a default DTypeArray."""
         Self._is_valid()
-        var zero = Scalar[dtype](
+        zero = Scalar[dtype](
             __mlir_op.`pop.cast`[
                 _type = __mlir_type[`!pop.simd<1,`, dtype.value, `>`]
             ](
@@ -131,7 +131,7 @@ struct DTypeArray[
         """
         Self._non_zero_size()
         debug_assert(idx < size, "index must be within bounds")
-        var ptr = __mlir_op.`pop.array.gep`(
+        ptr = __mlir_op.`pop.array.gep`(
             UnsafePointer.address_of(self.array).address,
             idx.value,
         )

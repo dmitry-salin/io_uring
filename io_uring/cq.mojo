@@ -151,7 +151,7 @@ struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
     fn __next__(
         inout self,
     ) -> ref [_lit_mut_cast[__lifetime_of(self), False].result] Cqe[type]:
-        var ptr = self.cq[].cqes.offset(
+        ptr = self.cq[].cqes.offset(
             int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
         self.cq[].cqe_head += 1

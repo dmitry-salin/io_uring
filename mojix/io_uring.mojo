@@ -39,7 +39,7 @@ fn io_uring_setup[
     """
     params.flags |= IoUringOwnedFd[is_registered].SETUP_FLAGS
 
-    var res = syscall[__NR_io_uring_setup, Scalar[DType.index]](
+    res = syscall[__NR_io_uring_setup, Scalar[DType.index]](
         sq_entries, UnsafePointer.address_of(params)
     )
     return IoUringOwnedFd[is_registered](
@@ -65,7 +65,7 @@ fn io_uring_register(
     Raises:
         `Errno` if the syscall returned an error.
     """
-    var res = syscall[__NR_io_uring_register, Scalar[DType.index]](
+    res = syscall[__NR_io_uring_register, Scalar[DType.index]](
         fd.io_uring_fd(),
         arg.opcode.id | fd.REGISTER_FLAGS.value,
         arg.arg_unsafe_ptr,
@@ -102,7 +102,7 @@ fn io_uring_enter(
     Raises:
         `Errno` if the syscall returned an error.
     """
-    var res = syscall[__NR_io_uring_enter, Scalar[DType.index]](
+    res = syscall[__NR_io_uring_enter, Scalar[DType.index]](
         fd.io_uring_fd(),
         to_submit,
         min_complete,

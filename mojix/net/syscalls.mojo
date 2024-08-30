@@ -27,7 +27,7 @@ fn _socket(
     _size_eq[SocketFlags, c_int]()
     _size_eq[Protocol, c_int]()
 
-    var res = syscall[__NR_socket, Scalar[DType.index], uses_memory=False](
+    res = syscall[__NR_socket, Scalar[DType.index], uses_memory=False](
         domain, type.id | flags.value, protocol
     )
     return OwnedFd(unsafe_fd=unsafe_decode_result[UnsafeFd.element_type](res))
@@ -37,7 +37,7 @@ fn _socket(
 fn _bind[Fd: FileDescriptor, Addr: SocketAddress](fd: Fd, addr: Addr) raises:
     constrained[is_x86_64()]()
 
-    var res = syscall[__NR_bind, Scalar[DType.index], uses_memory=False](
+    res = syscall[__NR_bind, Scalar[DType.index], uses_memory=False](
         fd.unsafe_fd(), addr.addr_unsafe_ptr(), addr.addr_len()
     )
     unsafe_decode_none(res)
@@ -48,7 +48,7 @@ fn _listen[Fd: FileDescriptor](fd: Fd, backlog: Backlog) raises:
     constrained[is_x86_64()]()
     _size_eq[Backlog, c_int]()
 
-    var res = syscall[__NR_listen, Scalar[DType.index], uses_memory=False](
+    res = syscall[__NR_listen, Scalar[DType.index], uses_memory=False](
         fd.unsafe_fd(), backlog
     )
     unsafe_decode_none(res)

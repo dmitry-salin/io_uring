@@ -267,7 +267,7 @@ fn unsafe_decode_result[
         `type` on success.
     """
     _check_for_errors(raw)
-    var res = raw.cast[type]()
+    res = raw.cast[type]()
     debug_assert(res.cast[DType.index]() == raw, "conversion is not lossless")
     return res
 

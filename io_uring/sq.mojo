@@ -209,7 +209,7 @@ struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
     fn __next__(
         inout self,
     ) -> ref [__lifetime_of(self)] Sqe[type]:
-        var ptr = self.sq[].sqes.offset(
+        ptr = self.sq[].sqes.offset(
             int(self.sq[].sqe_tail & self.sq[].ring_mask)
         )
         self.sq[].sqe_tail += 1

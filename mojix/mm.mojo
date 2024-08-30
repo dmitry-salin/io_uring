@@ -42,7 +42,7 @@ fn mmap[
     """
     constrained[is_64bit()]()
 
-    var res = syscall[__NR_mmap, UnsafePointer[c_void]](
+    res = syscall[__NR_mmap, UnsafePointer[c_void]](
         unsafe_ptr, len, prot, flags, fd.unsafe_fd(), offset
     )
     unsafe_decode_ptr(res)
@@ -77,7 +77,7 @@ fn mmap_anonymous(
     """
     constrained[is_64bit()]()
 
-    var res = syscall[__NR_mmap, UnsafePointer[c_void]](
+    res = syscall[__NR_mmap, UnsafePointer[c_void]](
         unsafe_ptr, len, prot, flags | MapFlags(MAP_ANONYMOUS), NoFd, 0
     )
     unsafe_decode_ptr(res)
@@ -101,7 +101,7 @@ fn munmap(*, unsafe_ptr: UnsafePointer[c_void], len: UInt) raises:
     Safety:
         Unsafe pointers and lots of special semantics.
     """
-    var res = syscall[__NR_munmap, Scalar[DType.index]](unsafe_ptr, len)
+    res = syscall[__NR_munmap, Scalar[DType.index]](unsafe_ptr, len)
     unsafe_decode_none(res)
 
 
@@ -125,9 +125,7 @@ fn madvise(
          to call `madvise` on. Some forms of `advice` may mutate the memory
          or evoke a variety of side-effects on the mapping and/or the file.
     """
-    var res = syscall[__NR_madvise, Scalar[DType.index]](
-        unsafe_ptr, len, advice
-    )
+    res = syscall[__NR_madvise, Scalar[DType.index]](unsafe_ptr, len, advice)
     unsafe_decode_none(res)
 
 

@@ -27,7 +27,7 @@ struct AtomicOrdering:
 fn _atomic_load[
     ordering: AtomicOrdering
 ](unsafe_ptr: UnsafePointer[UInt32]) -> UInt32:
-    var addr = unsafe_ptr.bitcast[
+    addr = unsafe_ptr.bitcast[
         __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`]
     ]().address
 
@@ -107,12 +107,12 @@ fn _one_less_than_next_power_of_two(value: UInt32) -> UInt32:
     if value <= 1:
         return 0
 
-    var p = value - 1
+    p = value - 1
     # Because `p > 0`, it cannot consist entirely of leading zeros.
     # That means the shift is always in-bounds, and some processors
     # (such as Intel pre-Haswell) have more efficient ctlz
     # intrinsics when the argument is non-zero.
-    var z = llvm_intrinsic["llvm.ctlz", UInt32, has_side_effect=False](p, True)
+    z = llvm_intrinsic["llvm.ctlz", UInt32, has_side_effect=False](p, True)
     return UInt32.MAX >> z
 
 @always_inline("nodebug")
@@ -125,8 +125,8 @@ fn _add_with_overflow(lhs: UInt32, rhs: UInt32) -> (UInt32, Bool):
         A tuple with the results of the operation and a `Bool` indicating
         overflow.
     """
-    var result = llvm_intrinsic[
+    res = llvm_intrinsic[
         "llvm.uadd.with.overflow",
         _RegisterPackType[UInt32, Bool],
     ](lhs, rhs)
-    return (result[0], result[1])
+    return (res[0], res[1])

@@ -150,10 +150,10 @@ struct IoUringOwnedFd[is_registered: Bool](FileDescriptor):
         """Closes/unregisters the file descriptor."""
         @parameter
         if is_registered:
-            var op = IoUringRsrcUpdate(self.fd.cast[DType.uint32](), 0, 0)
-            var arg = op.as_register_arg(unsafe_opcode=IoUringRegisterOp.UNREGISTER_RING_FDS)
+            op = IoUringRsrcUpdate(self.fd.cast[DType.uint32](), 0, 0)
+            arg = op.as_register_arg(unsafe_opcode=IoUringRegisterOp.UNREGISTER_RING_FDS)
             try:
-                var res = io_uring_register(self, arg)
+                res = io_uring_register(self, arg)
                 debug_assert(res == 1, "failed to unregister file descriptor")
             except:
                 pass

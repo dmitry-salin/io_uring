@@ -25,7 +25,7 @@ fn close(*, unsafe_fd: UnsafeFd):
         The file descriptor must be valid before the call, and is not valid
         after the call.
     """
-    var res = syscall[__NR_close, Scalar[DType.index], uses_memory=False](
+    res = syscall[__NR_close, Scalar[DType.index], uses_memory=False](
         unsafe_fd_as_arg(unsafe_fd)
     )
     _zero_result(res)
