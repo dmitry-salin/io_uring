@@ -137,14 +137,14 @@ struct IoUring[
     @always_inline
     fn sq(
         inout self,
-    ) -> SqRef[sqe, polling, __lifetime_of(self)]:
+    ) -> SqRef[sqe, polling, __lifetime_of(self._sq)]:
         self.sync_sq_head()
         return self.unsynced_sq()
 
     @always_inline
     fn unsynced_sq(
         inout self,
-    ) -> SqRef[sqe, polling, __lifetime_of(self)]:
+    ) -> SqRef[sqe, polling, __lifetime_of(self._sq)]:
         return self._sq
 
     @always_inline
@@ -198,13 +198,13 @@ struct IoUring[
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32
-    ) raises -> CqRef[cqe, __lifetime_of(self)]:
+    ) raises -> CqRef[cqe, __lifetime_of(self._cq)]:
         return self.cq(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32, arg: EnterArg
-    ) raises -> CqRef[cqe, __lifetime_of(self)]:
+    ) raises -> CqRef[cqe, __lifetime_of(self._cq)]:
         self.flush_cq(wait_nr, arg)
         return self._cq
 

@@ -159,7 +159,7 @@ struct SocketAddressV4:
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn octets(self) -> ref [__lifetime_of(self)] Self.Octets:
+    fn octets(self) -> ref [__lifetime_of(self.ip.octets)] Self.Octets:
         return self.ip.octets
 
     @always_inline("nodebug")
