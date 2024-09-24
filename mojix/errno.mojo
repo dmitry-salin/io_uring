@@ -1,5 +1,6 @@
 from .ctypes import c_void
 from linux_raw.x86_64.errno import *
+from memory import UnsafePointer
 
 
 @register_passable("trivial")

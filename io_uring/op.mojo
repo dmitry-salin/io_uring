@@ -19,6 +19,7 @@ from mojix.io_uring import (
 )
 from mojix.fd import OwnedFd, IoUringFd, NoFd, FileDescriptor
 from mojix.utils import _size_eq
+from memory import UnsafePointer
 
 
 @always_inline("nodebug")

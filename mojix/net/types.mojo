@@ -11,6 +11,7 @@ from linux_raw.x86_64.net import (
 from linux_raw.x86_64.net import *
 from linux_raw.utils import DTypeArray
 from sys.info import alignof, sizeof
+from memory import UnsafePointer
 
 
 alias SOCK_CLOEXEC = O_CLOEXEC

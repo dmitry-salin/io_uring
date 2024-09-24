@@ -11,6 +11,7 @@ from mojix.io_uring import (
     IoUringSetupFlags,
 )
 from mojix.utils import _size_eq, _align_eq
+from memory import UnsafePointer
 
 
 struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):

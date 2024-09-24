@@ -5,6 +5,7 @@ from linux_raw.x86_64.general import *
 from linux_raw.x86_64.general import __NR_mmap, __NR_munmap, __NR_madvise
 from linux_raw.x86_64.syscall import syscall
 from sys.info import is_64bit
+from memory import UnsafePointer
 
 
 @always_inline

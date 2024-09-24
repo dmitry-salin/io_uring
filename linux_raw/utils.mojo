@@ -1,5 +1,6 @@
 from sys import has_neon
 from sys.info import is_x86, is_64bit
+from memory import UnsafePointer
 
 
 @always_inline("nodebug")

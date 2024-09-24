@@ -10,6 +10,7 @@ from linux_raw.x86_64.general import (
 )
 from linux_raw.x86_64.syscall import syscall
 from linux_raw.utils import DTypeArray
+from memory import UnsafePointer
 
 
 @always_inline
@@ -289,7 +290,9 @@ struct Cqe[type: CQE]:
     @always_inline("nodebug")
     fn cmd(
         self: Cqe[CQE32],
-    ) -> ref [__lifetime_of(self)] DTypeArray[DType.uint64, CQE32.array_size]:
+    ) -> ref [__lifetime_of(self._big_cqe)] DTypeArray[
+        DType.uint64, CQE32.array_size
+    ]:
         return self._big_cqe
 
 

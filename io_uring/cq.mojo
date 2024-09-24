@@ -3,6 +3,7 @@ from .utils import AtomicOrdering, _atomic_load, _atomic_store
 from mojix.io_uring import Cqe, CQE, CQE16, CQE32, IoUringParams
 from mojix.utils import _size_eq, _align_eq
 from builtin.builtin_list import _lit_mut_cast
+from memory import UnsafePointer
 
 
 struct Cq[type: CQE](Movable, Sized, Boolable):

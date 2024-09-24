@@ -3,6 +3,7 @@ from mojix.ctypes import c_void
 from mojix.io_uring import EnterArg, IoUringEnterFlags, IoUringGetEventsArg
 from mojix.timespec import Timespec
 from sys.info import sizeof
+from memory import UnsafePointer
 
 
 struct WaitArg[

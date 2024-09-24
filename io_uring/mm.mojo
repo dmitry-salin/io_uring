@@ -22,6 +22,7 @@ from mojix.mm import (
     Advice,
 )
 from sys.info import alignof, sizeof
+from memory import UnsafePointer
 
 
 struct Region(Movable):
