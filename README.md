@@ -1,3 +1,6 @@
+As of 26.09.2024, the library cannot be used because Mojo inline assembly is broken.
+For details see: https://github.com/modularml/mojo/issues/3547
+
 # io_uring
 
 This is a Linux [`io_uring`](https://unixism.net/loti/) userspace
@@ -12,13 +15,14 @@ This repo includes source code for:
 
 ## Tests
 ```
-mojo test -D MOJO_ENABLE_ASSERTIONS -I .
+magic run mojo test -D MOJO_ENABLE_ASSERTIONS -I .
 ```
 
 Some tests do not work with the test framework and require a separate file:
 ```
-mojo -D MOJO_ENABLE_ASSERTIONS -I . run_tests.mojo
+magic run mojo -D MOJO_ENABLE_ASSERTIONS -I . run_tests.mojo
 ```
+
 
 ## Requirements
 Currently only x86_64 platform is supported. Mojo nightly builds are required.
