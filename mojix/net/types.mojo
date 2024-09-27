@@ -47,16 +47,18 @@ struct SocketAddressArgV4(SocketAddress):
 
     @always_inline("nodebug")
     fn __init__(inout self):
-        _size_eq[sockaddr_in, 16]()
-        _align_eq[sockaddr_in, 4]()
+        _size_eq[Self, 16]()
+        _align_eq[Self, 4]()
         self.addr = sockaddr_in(
             0, 0, in_addr(0), DTypeArray[c_uchar.element_type, 8]()
         )
 
     @always_inline("nodebug")
-    fn __init__(inout self, addr: SocketAddressV4):
-        _size_eq[sockaddr_in, 16]()
-        _align_eq[sockaddr_in, 4]()
+    fn __init__[
+        lifetime: ImmutableLifetime
+    ](inout self, ref [lifetime]addr: SocketAddressV4):
+        _size_eq[Self, 16]()
+        _align_eq[Self, 4]()
         _size_eq[addr.Octets, __be32]()
         _align_eq[addr.Octets, __be32]()
 
@@ -114,6 +116,7 @@ struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
 
 
 @value
+@register_passable("trivial")
 struct IpAddressV4:
     alias Octets = SIMD[DType.uint8, 4]
 
@@ -129,6 +132,7 @@ struct IpAddressV4:
 
 
 @value
+@register_passable("trivial")
 struct SocketAddressV4:
     alias Octets = IpAddressV4.Octets
 
@@ -160,11 +164,11 @@ struct SocketAddressV4:
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn octets(self) -> ref [__lifetime_of(self.ip.octets)] Self.Octets:
+    fn octets(ref [_]self) -> ref [__lifetime_of(self.ip.octets)] Self.Octets:
         return self.ip.octets
 
     @always_inline("nodebug")
-    fn arg(self) -> SocketAddressArgV4 as arg:
+    fn arg(ref [_]self) -> SocketAddressArgV4 as arg:
         arg = SocketAddressArgV4(self)
 
 

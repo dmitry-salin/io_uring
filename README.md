@@ -1,6 +1,3 @@
-As of 26.09.2024, the library cannot be used because Mojo inline assembly is broken.
-For details see: https://github.com/modularml/mojo/issues/3547
-
 # io_uring
 
 This is a Linux [`io_uring`](https://unixism.net/loti/) userspace

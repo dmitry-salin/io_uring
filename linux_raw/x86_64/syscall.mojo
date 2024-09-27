@@ -11,10 +11,9 @@ fn _syscall_constraints[
     uses_memory: Bool = True,
 ]() -> StringLiteral:
     alias has_outputs = not _mlirtype_is_eq[result_type, NoneType]()
-    alias outputs = "={rax},={rcx},={r11}," if has_outputs else ""
+    alias outputs = "={rax}," if has_outputs else ""
     alias syscall_nr_reg = "0" if has_outputs else "{rax}"
     alias arg_regs = [",{rdi}", ",{rsi}", ",{rdx}", ",{r10}", ",{r8}", ",{r9}"]
-    alias clobbers = ",~{memory}" if uses_memory else ""
 
     constrained[
         args_nr <= len(arg_regs),
@@ -30,7 +29,14 @@ fn _syscall_constraints[
             regs = regs + arg_regs.get[i, StringLiteral]()
         return regs
 
-    return outputs + inputs() + clobbers
+    @parameter
+    fn clobbers() -> StringLiteral:
+        val = ",~{rcx},~{r11}"
+        if uses_memory:
+            val = val + ",~{memory}"
+        return val
+
+    return outputs + inputs() + clobbers()
 
 
 # ===----------------------------------------------------------------------===#

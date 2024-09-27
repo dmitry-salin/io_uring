@@ -11,7 +11,7 @@ from .types import (
 from mojix.fd import OwnedFd, FileDescriptor
 
 
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -22,7 +22,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), Protocol())
 
 
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -34,7 +34,7 @@ fn socket(
     return _socket(domain, type, SocketFlags(), protocol)
 
 
-@no_inline
+@always_inline("nodebug")
 fn socket(
     domain: AddressFamily,
     type: SocketType,
@@ -48,7 +48,7 @@ fn socket(
 
 
 @always_inline("nodebug")
-fn bind[Fd: FileDescriptor](fd: Fd, addr: SocketAddressV4) raises:
+fn bind[Fd: FileDescriptor](fd: Fd, ref [_]addr: SocketAddressV4) raises:
     """Binds a socket to an IPV4 address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
