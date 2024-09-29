@@ -182,7 +182,7 @@ struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
         inout self,
         ref [lifetime]sqe: Sqe[type],
         fd: OwnedFd,
-        addr: SocketAddressV4,
+        ref [_]addr: SocketAddressV4,
     ):
         self.__init__(sqe, fd.io_uring_fd(), addr)
 
@@ -191,7 +191,7 @@ struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
         inout self,
         ref [lifetime]sqe: Sqe[type],
         fd: IoUringFd,
-        addr: SocketAddressV4,
+        ref [_]addr: SocketAddressV4,
     ):
         self.__init__(sqe, fd, addr.arg())
 

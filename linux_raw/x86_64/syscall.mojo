@@ -2,9 +2,9 @@ from sys._assembly import inlined_assembly
 from sys.intrinsics import _mlirtype_is_eq
 
 
-@always_inline
+@always_inline("nodebug")
 fn _syscall_constraints[
-    args_nr: IntLiteral,
+    nr_args: IntLiteral,
     result_type: AnyTrivialRegType,
     /,
     *,
@@ -16,7 +16,7 @@ fn _syscall_constraints[
     alias arg_regs = [",{rdi}", ",{rsi}", ",{rdx}", ",{r10}", ",{r8}", ",{r9}"]
 
     constrained[
-        args_nr <= len(arg_regs),
+        nr_args <= len(arg_regs),
         "the number of arguments must be less than or equal to the maximum",
     ]()
 
@@ -25,7 +25,7 @@ fn _syscall_constraints[
         regs = syscall_nr_reg
 
         @parameter
-        for i in range(args_nr):
+        for i in range(nr_args):
             regs = regs + arg_regs.get[i, StringLiteral]()
         return regs
 

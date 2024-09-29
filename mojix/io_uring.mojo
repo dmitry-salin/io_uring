@@ -271,7 +271,7 @@ struct Sqe[type: SQE]:
     @always_inline("nodebug")
     fn cmd(
         inout self: Sqe[SQE128],
-    ) -> ref [__lifetime_of(self)] DTypeArray[DType.uint8, 80]:
+    ) -> ref [self] DTypeArray[DType.uint8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
             DTypeArray[DType.uint8, 80]
         ]()[]
@@ -290,9 +290,7 @@ struct Cqe[type: CQE]:
     @always_inline("nodebug")
     fn cmd(
         self: Cqe[CQE32],
-    ) -> ref [__lifetime_of(self._big_cqe)] DTypeArray[
-        DType.uint64, CQE32.array_size
-    ]:
+    ) -> ref [self._big_cqe] __type_of(self._big_cqe):
         return self._big_cqe
 
 
@@ -750,7 +748,7 @@ struct RegisterArg[lifetime: MutableLifetime]:
 
 
 struct NoRegisterArg:
-    alias ENABLE_RINGS = RegisterArg[MutableStaticLifetime](
+    alias ENABLE_RINGS = RegisterArg[StaticConstantLifetime](
         opcode=IoUringRegisterOp.REGISTER_ENABLE_RINGS,
         arg_unsafe_ptr=UnsafePointer[c_void](),
         nr_args=0,
@@ -802,7 +800,7 @@ struct EnterArg[
         self.arg_unsafe_ptr = arg_unsafe_ptr
 
 
-alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), ImmutableStaticLifetime](
+alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), StaticConstantLifetime](
     arg_unsafe_ptr=UnsafePointer[c_void]()
 )
 

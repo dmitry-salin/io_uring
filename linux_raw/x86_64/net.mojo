@@ -127,6 +127,7 @@ struct in_addr:
 
 
 @value
+@register_passable("trivial")
 struct sockaddr_in:
     var sin_family: __kernel_sa_family_t
     var sin_port: __be16
@@ -135,6 +136,7 @@ struct sockaddr_in:
 
 
 @value
+@register_passable("trivial")
 struct in6_addr:
     var in6_u: DTypeArray[__u8.element_type, 16]
 

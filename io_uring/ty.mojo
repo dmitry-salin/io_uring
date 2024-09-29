@@ -26,7 +26,7 @@ struct WaitArg[
     fn __init__[
         lifetime: ImmutableLifetime
     ](
-        inout self: WaitArg[lifetime, ImmutableStaticLifetime],
+        inout self: WaitArg[lifetime, StaticConstantLifetime],
         ref [lifetime]sigmask: sigset_t,
     ):
         self.arg = IoUringGetEventsArg(
@@ -37,7 +37,7 @@ struct WaitArg[
     fn __init__[
         lifetime: ImmutableLifetime
     ](
-        inout self: WaitArg[ImmutableStaticLifetime, lifetime],
+        inout self: WaitArg[StaticConstantLifetime, lifetime],
         ref [lifetime]timespec: Timespec,
     ):
         self.arg = IoUringGetEventsArg(

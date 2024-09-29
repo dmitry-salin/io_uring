@@ -10,14 +10,20 @@ This repo includes source code for:
 - io_uring
 
 
+## Environment
+For Mojo LSP to work correctly in editors like [`Helix`](https://github.com/helix-editor/helix)
+some environment variables need to be set/modified. You can use [`direnv`](https://direnv.net/)
+or look at the `.envrc` file for values.
+
+
 ## Tests
 ```
-magic run mojo test -D MOJO_ENABLE_ASSERTIONS -I .
+magic run mojo test -D ASSERT=all -I .
 ```
 
 Some tests do not work with the test framework and require a separate file:
 ```
-magic run mojo -D MOJO_ENABLE_ASSERTIONS -I . run_tests.mojo
+magic run mojo -D ASSERT=all -I . run_tests.mojo
 ```
 
 

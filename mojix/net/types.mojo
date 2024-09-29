@@ -21,7 +21,7 @@ alias Backlog = c_uint
 
 
 trait SocketAddress(Defaultable):
-    fn addr_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         ...
 
     # TODO: Convert to an alias associated with the trait.
@@ -30,7 +30,7 @@ trait SocketAddress(Defaultable):
 
 
 trait SocketAddressMutable(Defaultable):
-    fn addr_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         ...
 
     fn addr_len_unsafe_ptr(self) -> UnsafePointer[c_void]:
@@ -38,6 +38,7 @@ trait SocketAddressMutable(Defaultable):
 
 
 @value
+@register_passable("trivial")
 struct SocketAddressArgV4(SocketAddress):
     var addr: sockaddr_in
 
@@ -78,7 +79,7 @@ struct SocketAddressArgV4(SocketAddress):
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn addr_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         return UnsafePointer.address_of(self.addr).bitcast[c_void]()
 
     @always_inline("nodebug")
@@ -107,7 +108,7 @@ struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn addr_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         return self.addr.addr_unsafe_ptr()
 
     @always_inline("nodebug")
@@ -164,7 +165,7 @@ struct SocketAddressV4:
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn octets(ref [_]self) -> ref [__lifetime_of(self.ip.octets)] Self.Octets:
+    fn octets(ref [_]self) -> ref [self.ip.octets] Self.Octets:
         return self.ip.octets
 
     @always_inline("nodebug")

@@ -9,6 +9,7 @@ fn is_x86_64() -> Bool:
 
 
 @value
+@register_passable("trivial")
 struct DTypeArray[
     dtype: DType,
     size: Int,
@@ -121,7 +122,7 @@ struct DTypeArray[
         ](self.array)
 
     @always_inline("nodebug")
-    fn __getitem__(self: Self, idx: UInt) -> Scalar[dtype]:
+    fn __getitem__(ref [_]self: Self, idx: UInt) -> Scalar[dtype]:
         """Get the element at the given index.
 
         Args:
