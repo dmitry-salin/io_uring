@@ -1,6 +1,6 @@
 from mojix.errno import Errno
 from mojix.net.socket import socket, bind, listen
-from mojix.net.types import AddressFamily, SocketType, SocketAddressV4
+from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
 from mojix.timespec import Timespec
 from io_uring import IoUring, WaitArg
 from io_uring.op import Accept
@@ -10,8 +10,8 @@ from testing import assert_equal, assert_raises
 fn test_accept_timeout() raises:
     ring = IoUring[](sq_entries=8)
 
-    fd = socket(AddressFamily.INET, SocketType.STREAM)
-    bind(fd, SocketAddressV4(0, 0, 0, 0, port=1111))
+    fd = socket(AddrFamily.INET, SocketType.STREAM)
+    bind(fd, SocketAddrV4(0, 0, 0, 0, port=1111))
     listen(fd, backlog=64)
 
     sq = ring.sq()

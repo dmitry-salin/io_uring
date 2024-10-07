@@ -82,7 +82,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
                 offset=params.sq_off.array, count=self.ring_entries
             )
             # Directly map `sq` slots to `sqes`.
-            for i in range(self.ring_entries):
+            for i in range(int(self.ring_entries)):
                 self.array[i] = i
 
         self.sqes = sqes_mem.unsafe_ptr[Sqe[type]](
@@ -182,10 +182,10 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
 
 
 @register_passable
-struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
+struct SqPtr[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
     Sized, Boolable
 ):
-    var sq: Reference[Sq[type, polling], sq_lifetime]
+    var sq: Pointer[Sq[type, polling], sq_lifetime]
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
@@ -193,7 +193,7 @@ struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
 
     @always_inline
     fn __init__(inout self, ref [sq_lifetime]sq: Sq[type, polling]):
-        self.sq = sq
+        self.sq = Pointer.address_of(sq)
 
     # ===------------------------------------------------------------------=== #
     # Operator dunders
@@ -212,6 +212,10 @@ struct SqRef[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
         )
         self.sq[].sqe_tail += 1
         return _nop_data(ptr[])
+
+    @always_inline
+    fn __hasmore__(self) -> Bool:
+        return self.__len__() > 0
 
     # ===------------------------------------------------------------------=== #
     # Trait implementations

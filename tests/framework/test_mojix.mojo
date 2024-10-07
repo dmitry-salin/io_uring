@@ -5,19 +5,18 @@ from mojix.io_uring import (
     io_uring_enter,
     CQE_SIZE_DEFAULT,
     IoUringSetupFlags,
-    IoUringRegisterOp,
-    IoUringRegisterFlags,
     IoUringEnterFlags,
     NoRegisterArg,
     NO_ENTER_ARG,
 )
-from mojix.ctypes import c_void
-from mojix.fd import IoUringOwnedFd, NoFd
+from mojix.fd import IoUringFileDescriptor
 from mojix.errno import Errno
 from testing import *
 
 
-fn _io_uring_enter_get_events(fd: IoUringOwnedFd) raises -> UInt32:
+fn _io_uring_enter_get_events[
+    Fd: IoUringFileDescriptor
+](fd: Fd) raises -> UInt32:
     return io_uring_enter(
         fd,
         to_submit=0,

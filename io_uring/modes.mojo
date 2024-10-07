@@ -1,22 +1,18 @@
 from mojix.io_uring import IoUringSetupFlags
 
 
-alias NOPOLL = PollingMode.NOPOLL
-alias IOPOLL = PollingMode.IOPOLL
-alias SQPOLL = PollingMode.SQPOLL
+alias NOPOLL = PollingMode {id: 0, setup_flags: IoUringSetupFlags()}
+alias IOPOLL = PollingMode {id: 1, setup_flags: IoUringSetupFlags.IOPOLL}
+alias SQPOLL = PollingMode {id: 2, setup_flags: IoUringSetupFlags.SQPOLL}
 
 
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct PollingMode(Identifiable):
-    alias NOPOLL = Self {id: 0, setup_flags: IoUringSetupFlags()}
-    alias IOPOLL = Self {id: 1, setup_flags: IoUringSetupFlags.IOPOLL}
-    alias SQPOLL = Self {id: 2, setup_flags: IoUringSetupFlags.SQPOLL}
-
     var id: UInt8
     var setup_flags: IoUringSetupFlags
 
-    @always_inline("nodebug")
+    @always_inline
     fn __is__(self, rhs: Self) -> Bool:
         """Defines whether one PollingMode has the same identity as another.
 
@@ -28,7 +24,7 @@ struct PollingMode(Identifiable):
         """
         return self.id == rhs.id
 
-    @always_inline("nodebug")
+    @always_inline
     fn __isnot__(self, rhs: Self) -> Bool:
         """Defines whether one PollingMode has a different identity than another.
 

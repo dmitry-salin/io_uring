@@ -44,7 +44,7 @@ fn mmap[
     constrained[is_64bit()]()
 
     res = syscall[__NR_mmap, UnsafePointer[c_void]](
-        unsafe_ptr, len, prot, flags, fd.unsafe_fd(), offset
+        unsafe_ptr, len, prot, flags, fd.fd(), offset
     )
     unsafe_decode_ptr(res)
     return res

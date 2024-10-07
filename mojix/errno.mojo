@@ -221,7 +221,7 @@ struct Errno(Stringable):
     # Trait implementations
     # ===-------------------------------------------------------------------===#
 
-    @always_inline("nodebug")
+    @always_inline
     fn __str__(self) -> String:
         """Converts Errno to a string representation.
 

@@ -1,10 +1,10 @@
 from .types import (
     Backlog,
-    AddressFamily,
+    AddrFamily,
     SocketType,
     SocketFlags,
     Protocol,
-    SocketAddress,
+    SocketAddr,
 )
 from mojix.ctypes import c_int
 from mojix.utils import _size_eq
@@ -17,7 +17,7 @@ from linux_raw.x86_64.syscall import syscall
 
 @always_inline
 fn _socket(
-    domain: AddressFamily,
+    domain: AddrFamily,
     type: SocketType,
     flags: SocketFlags,
     protocol: Protocol,
@@ -34,11 +34,13 @@ fn _socket(
 
 
 @always_inline
-fn _bind[Fd: FileDescriptor, Addr: SocketAddress](fd: Fd, addr: Addr) raises:
+fn _bind[
+    Fd: FileDescriptor, Addr: SocketAddr
+](fd: Fd, ref [_]addr: Addr) raises:
     constrained[is_x86_64()]()
 
     res = syscall[__NR_bind, Scalar[DType.index], uses_memory=False](
-        fd.unsafe_fd(), addr.addr_unsafe_ptr(), addr.addr_len()
+        fd.fd(), addr.addr_unsafe_ptr(), Addr.ADDR_LEN
     )
     unsafe_decode_none(res)
 
@@ -49,6 +51,6 @@ fn _listen[Fd: FileDescriptor](fd: Fd, backlog: Backlog) raises:
     _size_eq[Backlog, c_int]()
 
     res = syscall[__NR_listen, Scalar[DType.index], uses_memory=False](
-        fd.unsafe_fd(), backlog
+        fd.fd(), backlog
     )
     unsafe_decode_none(res)

@@ -122,8 +122,8 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
 
 
 @register_passable
-struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
-    var cq: Reference[Cq[type], cq_lifetime]
+struct CqPtr[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
+    var cq: Pointer[Cq[type], cq_lifetime]
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
@@ -131,7 +131,7 @@ struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
 
     @always_inline
     fn __init__(inout self, ref [cq_lifetime]cq: Cq[type]):
-        self.cq = cq
+        self.cq = Pointer.address_of(cq)
 
     @always_inline
     fn __del__(owned self):
@@ -156,6 +156,10 @@ struct CqRef[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
         )
         self.cq[].cqe_head += 1
         return ptr[]
+
+    @always_inline
+    fn __hasmore__(self) -> Bool:
+        return self.__len__() > 0
 
     # ===------------------------------------------------------------------=== #
     # Trait implementations

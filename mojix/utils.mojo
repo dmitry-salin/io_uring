@@ -3,6 +3,13 @@ from sys.info import alignof, sizeof, is_big_endian
 from linux_raw.utils import DTypeArray
 
 
+alias StaticMutableLifetime = __mlir_attr[
+    `#lit.lifetime.field<`,
+    `#lit.static.lifetime : !lit.lifetime<1>`,
+    `, "__constants__"> : !lit.lifetime<1>`,
+]
+
+
 @always_inline("nodebug")
 fn _aligned_u64[T: AnyType]():
     # [Linux]: https://github.com/torvalds/linux/blob/v6.7/include/uapi/linux/types.h#L47.

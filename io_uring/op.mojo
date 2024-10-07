@@ -1,8 +1,8 @@
 from mojix.ctypes import c_void
 from mojix.net.types import (
-    SocketAddress,
-    SocketAddressMutable,
-    SocketAddressV4,
+    SocketAddr,
+    SocketAddrMut,
+    SocketAddrV4,
     RecvFlags,
     SendFlags,
     SocketFlags,
@@ -17,12 +17,12 @@ from mojix.io_uring import (
     IoUringSqeFlags,
     IoUringSendFlags,
 )
-from mojix.fd import OwnedFd, IoUringFd, NoFd, FileDescriptor
+from mojix.fd import NoFd, Fd, IoUringFileDescriptor
 from mojix.utils import _size_eq
 from memory import UnsafePointer
 
 
-@always_inline("nodebug")
+@always_inline
 fn _nop_data[
     type: SQE, lifetime: MutableLifetime
 ](ref [lifetime]sqe: Sqe[type]) -> ref [lifetime] Sqe[type]:
@@ -31,16 +31,12 @@ fn _nop_data[
     return sqe
 
 
-@always_inline("nodebug")
-fn _prep_rw(
-    inout sqe: Sqe,
-    op: IoUringOp,
-    fd: IoUringFd,
-    addr: UInt64,
-    len: UInt32,
-):
+@always_inline
+fn _prep_rw[
+    Fd: IoUringFileDescriptor
+](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
     sqe.opcode = op
-    sqe.flags = fd.SQE_FLAGS
+    sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
     sqe.fd = fd.unsafe_fd()
     sqe.off_or_addr2_or_cmd_op = 0
@@ -58,16 +54,12 @@ fn _prep_rw(
         sqe._big_sqe = sqe.Array(0)
 
 
-@always_inline("nodebug")
-fn _prep_addr(
-    inout sqe: Sqe,
-    op: IoUringOp,
-    fd: IoUringFd,
-    addr: UInt64,
-    addr_len: UInt64,
-):
+@always_inline
+fn _prep_addr[
+    Fd: IoUringFileDescriptor
+](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, addr_len: UInt64):
     sqe.opcode = op
-    sqe.flags = fd.SQE_FLAGS
+    sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
     sqe.fd = fd.unsafe_fd()
     sqe.off_or_addr2_or_cmd_op = addr_len
@@ -106,35 +98,38 @@ struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.5
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(inout self, ref [lifetime]sqe: Sqe[type], fd: OwnedFd):
-        self.__init__(sqe, fd.io_uring_fd())
-
-    @always_inline("nodebug")
+    @always_inline
     fn __init__[
-        Addr: SocketAddressMutable
-    ](inout self, ref [lifetime]sqe: Sqe[type], fd: OwnedFd, addr: Addr):
-        self.__init__(sqe, fd.io_uring_fd(), addr)
-
-    @always_inline("nodebug")
-    fn __init__(inout self, ref [lifetime]sqe: Sqe[type], fd: IoUringFd):
+        Fd: IoUringFileDescriptor
+    ](inout self, ref [lifetime]sqe: Sqe[type], fd: Fd):
         self.__init__(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__[
-        Addr: SocketAddressMutable
-    ](inout self, ref [lifetime]sqe: Sqe[type], fd: IoUringFd, addr: Addr):
-        self.__init__(
-            sqe, fd, addr.addr_unsafe_ptr(), addr.addr_len_unsafe_ptr()
-        )
-
-    @always_inline("nodebug")
-    fn __init__(
+        Fd: IoUringFileDescriptor,
+        Addr: SocketAddrMut,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
+        ref [_]unsafe_addr: Addr,
+    ):
+        self.__init__(
+            sqe,
+            fd,
+            unsafe_addr.addr_unsafe_ptr(),
+            unsafe_addr.len_unsafe_ptr(),
+        )
+
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
+        inout self,
+        ref [lifetime]sqe: Sqe[type],
+        fd: Fd,
         addr_unsafe_ptr: UnsafePointer[c_void],
         addr_len_unsafe_ptr: UnsafePointer[c_void],
     ):
@@ -145,7 +140,7 @@ struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
             int(addr_unsafe_ptr),
             int(addr_len_unsafe_ptr),
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -175,44 +170,26 @@ struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.5
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor, Addr: SocketAddr
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        ref [_]addr: SocketAddressV4,
+        fd: Fd,
+        *,
+        ref [_]unsafe_addr: Addr,
     ):
-        self.__init__(sqe, fd.io_uring_fd(), addr)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
-        ref [_]addr: SocketAddressV4,
-    ):
-        self.__init__(sqe, fd, addr.arg())
-
-    @always_inline("nodebug")
-    fn __init__[
-        Addr: SocketAddress
-    ](inout self, ref [lifetime]sqe: Sqe[type], fd: OwnedFd, addr: Addr):
-        self.__init__(sqe, fd.io_uring_fd(), addr)
-
-    @always_inline("nodebug")
-    fn __init__[
-        Addr: SocketAddress
-    ](inout self, ref [lifetime]sqe: Sqe[type], fd: IoUringFd, addr: Addr):
         _prep_addr(
             sqe,
             IoUringOp.CONNECT,
             fd,
-            int(addr.addr_unsafe_ptr()),
-            addr.addr_len().cast[DType.uint64](),
+            int(unsafe_addr.addr_unsafe_ptr()),
+            Addr.ADDR_LEN.cast[DType.uint64](),
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -242,18 +219,18 @@ struct Nop[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.1
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self, ref [lifetime]sqe: Sqe[type]):
         _prep_rw(
             sqe,
             IoUringOp.NOP,
-            IoUringFd[False](unsafe_fd=NoFd),
+            Fd(unsafe_fd=NoFd),
             0,
             0,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -277,23 +254,15 @@ struct Read[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        unsafe_ptr: UnsafePointer[c_void],
-        len: UInt,
-    ):
-        self.__init__(sqe, fd.io_uring_fd(), unsafe_ptr, len)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
     ):
@@ -304,7 +273,7 @@ struct Read[type: SQE, lifetime: MutableLifetime](Operation):
             int(unsafe_ptr),
             len,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -349,23 +318,15 @@ struct Recv[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        unsafe_ptr: UnsafePointer[c_void],
-        len: UInt,
-    ):
-        self.__init__(sqe, fd.io_uring_fd(), unsafe_ptr, len)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
     ):
@@ -376,7 +337,7 @@ struct Recv[type: SQE, lifetime: MutableLifetime](Operation):
             int(unsafe_ptr),
             len,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -411,23 +372,15 @@ struct Send[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        unsafe_ptr: UnsafePointer[c_void],
-        len: UInt,
-    ):
-        self.__init__(sqe, fd.io_uring_fd(), unsafe_ptr, len)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
     ):
@@ -438,7 +391,7 @@ struct Send[type: SQE, lifetime: MutableLifetime](Operation):
             int(unsafe_ptr),
             len,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -468,23 +421,15 @@ struct SendZc[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 6.0
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        unsafe_ptr: UnsafePointer[c_void],
-        len: UInt,
-    ):
-        self.__init__(sqe, fd.io_uring_fd(), unsafe_ptr, len)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
     ):
@@ -495,7 +440,7 @@ struct SendZc[type: SQE, lifetime: MutableLifetime](Operation):
             int(unsafe_ptr),
             len,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:
@@ -536,23 +481,15 @@ struct Write[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.6
 
-    var sqe: Reference[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], lifetime]
 
-    @always_inline("nodebug")
-    fn __init__(
+    @always_inline
+    fn __init__[
+        Fd: IoUringFileDescriptor,
+    ](
         inout self,
         ref [lifetime]sqe: Sqe[type],
-        fd: OwnedFd,
-        unsafe_ptr: UnsafePointer[c_void],
-        len: UInt,
-    ):
-        self.__init__(sqe, fd.io_uring_fd(), unsafe_ptr, len)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: IoUringFd,
+        fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
     ):
@@ -563,7 +500,7 @@ struct Write[type: SQE, lifetime: MutableLifetime](Operation):
             int(unsafe_ptr),
             len,
         )
-        self.sqe = sqe
+        self.sqe = Pointer.address_of(sqe)
 
     @always_inline("nodebug")
     fn user_data(owned self, value: UInt64) -> Self:

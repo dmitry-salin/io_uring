@@ -1,10 +1,10 @@
-from .cq import Cq, CqRef
-from .sq import Sq, SqRef
+from .cq import Cq, CqPtr
+from .sq import Sq, SqPtr
 from .modes import PollingMode, NOPOLL, IOPOLL, SQPOLL
 from .mm import MemoryMapping, Region
 from .params import Params
 from mojix.ctypes import c_void
-from mojix.fd import IoUringOwnedFd
+from mojix.fd import OwnedFd
 from mojix.io_uring import (
     Sqe,
     SQE,
@@ -30,6 +30,7 @@ from mojix.io_uring import (
 )
 from mojix.utils import DTypeArray
 from sys.info import sizeof
+from sys.intrinsics import unlikely
 
 
 struct IoUring[
@@ -41,7 +42,7 @@ struct IoUring[
 ](Movable):
     var _sq: Sq[sqe, polling]
     var _cq: Cq[cqe]
-    var fd: IoUringOwnedFd[is_registered]
+    var fd: OwnedFd[is_registered]
     var mem: MemoryMapping[sqe, cqe]
 
     # ===------------------------------------------------------------------=== #
@@ -137,14 +138,14 @@ struct IoUring[
     @always_inline
     fn sq(
         inout self,
-    ) -> SqRef[sqe, polling, __lifetime_of(self._sq)]:
+    ) -> SqPtr[sqe, polling, __lifetime_of(self._sq)]:
         self.sync_sq_head()
         return self.unsynced_sq()
 
     @always_inline
     fn unsynced_sq(
         inout self,
-    ) -> SqRef[sqe, polling, __lifetime_of(self._sq)]:
+    ) -> SqPtr[sqe, polling, __lifetime_of(self._sq)]:
         return self._sq
 
     @always_inline
@@ -188,8 +189,7 @@ struct IoUring[
         # can see the store to the `self._sq._tail` before we read the flags.
         # [Reference]: https://github.com/modularml/mojo/issues/3162.
 
-        # TODO: Use `unlikely` intrinsic when it becomes available.
-        if self._sq.flags() & IoUringSqFlags.NEED_WAKEUP:
+        if unlikely(bool(self._sq.flags() & IoUringSqFlags.NEED_WAKEUP)):
             flags |= IoUringEnterFlags.SQ_WAKEUP
             return True
 
@@ -198,13 +198,13 @@ struct IoUring[
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32
-    ) raises -> CqRef[cqe, __lifetime_of(self._cq)]:
+    ) raises -> CqPtr[cqe, __lifetime_of(self._cq)]:
         return self.cq(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32, arg: EnterArg
-    ) raises -> CqRef[cqe, __lifetime_of(self._cq)]:
+    ) raises -> CqPtr[cqe, __lifetime_of(self._cq)]:
         self.flush_cq(wait_nr, arg)
         return self._cq
 

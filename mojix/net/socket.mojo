@@ -1,19 +1,20 @@
 from .syscalls import _socket, _bind, _listen
 from .types import (
     Backlog,
-    AddressFamily,
+    AddrFamily,
     SocketType,
     SocketFlags,
     Protocol,
-    SocketAddress,
-    SocketAddressV4,
+    SocketAddr,
+    SocketAddrStor,
+    SocketAddrV4,
 )
 from mojix.fd import OwnedFd, FileDescriptor
 
 
-@always_inline("nodebug")
+@always_inline
 fn socket(
-    domain: AddressFamily,
+    domain: AddrFamily,
     type: SocketType,
 ) raises -> OwnedFd:
     """Creates a socket.
@@ -22,9 +23,9 @@ fn socket(
     return _socket(domain, type, SocketFlags(), Protocol())
 
 
-@always_inline("nodebug")
+@always_inline
 fn socket(
-    domain: AddressFamily,
+    domain: AddrFamily,
     type: SocketType,
     protocol: Protocol,
 ) raises -> OwnedFd:
@@ -34,9 +35,9 @@ fn socket(
     return _socket(domain, type, SocketFlags(), protocol)
 
 
-@always_inline("nodebug")
+@always_inline
 fn socket(
-    domain: AddressFamily,
+    domain: AddrFamily,
     type: SocketType,
     flags: SocketFlags,
     protocol: Protocol,
@@ -47,23 +48,25 @@ fn socket(
     return _socket(domain, type, flags, protocol)
 
 
-@always_inline("nodebug")
-fn bind[Fd: FileDescriptor](fd: Fd, ref [_]addr: SocketAddressV4) raises:
-    """Binds a socket to an IPV4 address.
+@always_inline
+fn bind[
+    Fd: FileDescriptor, Addr: SocketAddrStor
+](fd: Fd, ref [_]addr: Addr) raises:
+    """Binds a socket to an address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
-    _bind(fd, addr.arg())
+    _bind(fd, addr.addr_stor())
 
 
-@always_inline("nodebug")
-fn bind[Fd: FileDescriptor, Addr: SocketAddress](fd: Fd, addr: Addr) raises:
+@always_inline
+fn bind[Fd: FileDescriptor, Addr: SocketAddr](fd: Fd, ref [_]addr: Addr) raises:
     """Binds a socket to an address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
     _bind(fd, addr)
 
 
-@always_inline("nodebug")
+@always_inline
 fn listen[Fd: FileDescriptor](fd: Fd, backlog: Backlog) raises:
     """Enables listening for incoming connections.
     [Linux]: https://man7.org/linux/man-pages/man2/listen.2.html.

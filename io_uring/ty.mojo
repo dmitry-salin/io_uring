@@ -18,11 +18,11 @@ struct WaitArg[
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.arg = IoUringGetEventsArg()
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__[
         lifetime: ImmutableLifetime
     ](
@@ -33,7 +33,7 @@ struct WaitArg[
             int(UnsafePointer.address_of(sigmask)), sizeof[sigset_t](), 0, 0
         )
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__[
         lifetime: ImmutableLifetime
     ](
@@ -44,7 +44,7 @@ struct WaitArg[
             0, 0, 0, int(UnsafePointer.address_of(timespec))
         )
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(
         inout self,
         ref [sigmask_lifetime]sigmask: sigset_t,
@@ -61,7 +61,7 @@ struct WaitArg[
     # Methods
     # ===-------------------------------------------------------------------===#
 
-    @always_inline("nodebug")
+    @always_inline
     fn as_enter_arg(
         self,
     ) -> EnterArg[

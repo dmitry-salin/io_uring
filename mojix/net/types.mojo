@@ -20,33 +20,48 @@ alias SOCK_NONBLOCK = O_NONBLOCK
 alias Backlog = c_uint
 
 
-trait SocketAddress(Defaultable):
+trait SocketAddr(Defaultable):
+    alias ADDR_LEN: socklen_t
+
     fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         ...
 
-    # TODO: Convert to an alias associated with the trait.
-    fn addr_len(self) -> socklen_t:
-        ...
 
-
-trait SocketAddressMutable(Defaultable):
+trait SocketAddrMut(Defaultable):
     fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         ...
 
-    fn addr_len_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    fn len_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+        ...
+
+
+trait SocketAddrStor:
+    alias SocketAddrStor: SocketAddr
+
+    fn addr_stor(ref [_]self) -> SocketAddrStor as out:
+        ...
+
+
+trait SocketAddrStorMut:
+    alias SocketAddrStorMut: SocketAddrMut
+
+    @staticmethod
+    fn addr_stor_mut() -> SocketAddrStorMut as out:
         ...
 
 
 @value
 @register_passable("trivial")
-struct SocketAddressArgV4(SocketAddress):
+struct SocketAddrStorV4(SocketAddr):
+    alias ADDR_LEN: socklen_t = sizeof[sockaddr_in]()
+
     var addr: sockaddr_in
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         _size_eq[Self, 16]()
         _align_eq[Self, 4]()
@@ -54,17 +69,17 @@ struct SocketAddressArgV4(SocketAddress):
             0, 0, in_addr(0), DTypeArray[c_uchar.element_type, 8]()
         )
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__[
         lifetime: ImmutableLifetime
-    ](inout self, ref [lifetime]addr: SocketAddressV4):
+    ](inout self, ref [lifetime]addr: SocketAddrV4):
         _size_eq[Self, 16]()
         _align_eq[Self, 4]()
         _size_eq[addr.Octets, __be32]()
         _align_eq[addr.Octets, __be32]()
 
         self.addr = sockaddr_in(
-            AddressFamily.INET.id,
+            AddrFamily.INET.id,
             _to_be(addr.port),
             in_addr(
                 UnsafePointer.address_of(addr.octets())
@@ -78,19 +93,15 @@ struct SocketAddressArgV4(SocketAddress):
     # Trait implementations
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         return UnsafePointer.address_of(self.addr).bitcast[c_void]()
 
-    @always_inline("nodebug")
-    fn addr_len(self) -> socklen_t:
-        return sizeof[sockaddr_in]()
+
+alias SocketAddrStorMutV4 = SocketAddrStorAnyMut[SocketAddrStorV4]
 
 
-alias SocketAddressArgMutV4 = SocketAddressArgMut[SocketAddressArgV4]
-
-
-struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
+struct SocketAddrStorAnyMut[Addr: SocketAddr](SocketAddrMut):
     var addr: Addr
     var len: socklen_t
 
@@ -98,27 +109,27 @@ struct SocketAddressArgMut[Addr: SocketAddress](SocketAddressMutable):
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.addr = Addr()
-        self.len = self.addr.addr_len()
+        self.len = Addr.ADDR_LEN
 
     # ===------------------------------------------------------------------=== #
     # Trait implementations
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         return self.addr.addr_unsafe_ptr()
 
-    @always_inline("nodebug")
-    fn addr_len_unsafe_ptr(self) -> UnsafePointer[c_void]:
+    @always_inline
+    fn len_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
         return UnsafePointer.address_of(self.len).bitcast[c_void]()
 
 
 @value
 @register_passable("trivial")
-struct IpAddressV4:
+struct IpAddrV4:
     alias Octets = SIMD[DType.uint8, 4]
 
     var octets: Self.Octets
@@ -127,50 +138,52 @@ struct IpAddressV4:
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self, a: UInt8, b: UInt8, c: UInt8, d: UInt8):
         self.octets = Self.Octets(a, b, c, d)
 
 
 @value
 @register_passable("trivial")
-struct SocketAddressV4:
-    alias Octets = IpAddressV4.Octets
+struct SocketAddrV4(SocketAddrStor, SocketAddrStorMut):
+    alias SocketAddrStor: SocketAddr = SocketAddrStorV4
+    alias SocketAddrStorMut: SocketAddrMut = SocketAddrStorMutV4
+    alias Octets = IpAddrV4.Octets
 
-    var ip: IpAddressV4
+    var ip: IpAddrV4
     var port: UInt16
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(
         inout self, a: UInt8, b: UInt8, c: UInt8, d: UInt8, *, port: UInt16
     ):
-        self.ip = IpAddressV4(a, b, c, d)
+        self.ip = IpAddrV4(a, b, c, d)
         self.port = port
-
-    # ===-------------------------------------------------------------------===#
-    # Factory methods
-    # ===-------------------------------------------------------------------===#
-
-    @staticmethod
-    @always_inline("nodebug")
-    fn arg_mut() -> SocketAddressArgMutV4 as arg:
-        arg = SocketAddressArgMutV4()
 
     # ===-------------------------------------------------------------------===#
     # Methods
     # ===-------------------------------------------------------------------===#
 
-    @always_inline("nodebug")
+    @always_inline
     fn octets(ref [_]self) -> ref [self.ip.octets] Self.Octets:
         return self.ip.octets
 
-    @always_inline("nodebug")
-    fn arg(ref [_]self) -> SocketAddressArgV4 as arg:
-        arg = SocketAddressArgV4(self)
+    # ===------------------------------------------------------------------=== #
+    # Trait implementations
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn addr_stor(ref [_]self) -> Self.SocketAddrStor as out:
+        out = Self.SocketAddrStor(self)
+
+    @staticmethod
+    @always_inline
+    fn addr_stor_mut() -> Self.SocketAddrStorMut as out:
+        out = Self.SocketAddrStorMut()
 
 
 alias RawSocketType = c_uint
@@ -217,12 +230,12 @@ struct SocketFlags(Defaultable):
         return self.value | rhs.value
 
 
-alias RawAddressFamily = __kernel_sa_family_t
+alias RawAddrFamily = __kernel_sa_family_t
 
 
 @value
 @register_passable("trivial")
-struct AddressFamily:
+struct AddrFamily:
     """`AF_*` constants for use with `socket`."""
 
     alias UNSPEC = Self {id: AF_UNSPEC}
@@ -231,7 +244,7 @@ struct AddressFamily:
     alias NETLINK = Self {id: AF_NETLINK}
     alias UNIX = Self {id: AF_UNIX}
 
-    var id: RawAddressFamily
+    var id: RawAddrFamily
 
 
 @value

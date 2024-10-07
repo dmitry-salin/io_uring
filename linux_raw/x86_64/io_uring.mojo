@@ -174,7 +174,7 @@ struct io_sqring_offsets(Defaultable):
     var resv1: UInt32
     var user_addr: UInt64
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.head = 0
         self.tail = 0
@@ -199,7 +199,7 @@ struct io_cqring_offsets(Defaultable):
     var resv1: UInt32
     var user_addr: UInt64
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.head = 0
         self.tail = 0

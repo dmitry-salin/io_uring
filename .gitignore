@@ -5,6 +5,7 @@
 *.code-workspace
 .vscode
 
+.env
 run_tests
 
 # pixi environments

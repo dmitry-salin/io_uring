@@ -1,7 +1,7 @@
 from .ctypes import c_void
-from .fd import UnsafeFd, IoUringOwnedFd, IoUringFd
+from .fd import UnsafeFd, IoUringFileDescriptor, OwnedFd
 from .errno import unsafe_decode_result
-from .utils import _aligned_u64
+from .utils import _aligned_u64, StaticMutableLifetime
 from linux_raw.x86_64.io_uring import *
 from linux_raw.x86_64.general import (
     __NR_io_uring_setup,
@@ -16,7 +16,7 @@ from memory import UnsafePointer
 @always_inline
 fn io_uring_setup[
     is_registered: Bool
-](sq_entries: UInt32, inout params: IoUringParams) raises -> IoUringOwnedFd[
+](sq_entries: UInt32, inout params: IoUringParams) raises -> OwnedFd[
     is_registered
 ]:
     """Sets up a context for performing asynchronous I/O.
@@ -38,23 +38,25 @@ fn io_uring_setup[
     Raises:
         `Errno` if the syscall returned an error.
     """
-    params.flags |= IoUringOwnedFd[is_registered].SETUP_FLAGS
+    params.flags |= OwnedFd[is_registered].SETUP_FLAGS
 
     res = syscall[__NR_io_uring_setup, Scalar[DType.index]](
         sq_entries, UnsafePointer.address_of(params)
     )
-    return IoUringOwnedFd[is_registered](
+    return OwnedFd[is_registered](
         unsafe_fd=unsafe_decode_result[UnsafeFd.element_type](res)
     )
 
 
 @always_inline
-fn io_uring_register(
-    fd: IoUringOwnedFd,
-    arg: RegisterArg,
-) raises -> UInt32:
+fn io_uring_register[
+    Fd: IoUringFileDescriptor
+](fd: Fd, arg: RegisterArg,) raises -> UInt32:
     """Registers/unregisters files or user buffers for asynchronous I/O.
     [Linux]: https://www.man7.org/linux/man-pages/man2/io_uring_register.2.html.
+
+    Parameters:
+        Fd: The type of the file descriptor returned by `io_uring_setup`.
 
     Args:
         fd: The file descriptor returned by `io_uring_setup`.
@@ -67,8 +69,8 @@ fn io_uring_register(
         `Errno` if the syscall returned an error.
     """
     res = syscall[__NR_io_uring_register, Scalar[DType.index]](
-        fd.io_uring_fd(),
-        arg.opcode.id | fd.REGISTER_FLAGS.value,
+        fd.unsafe_fd(),
+        arg.opcode.id | Fd.REGISTER_FLAGS.value,
         arg.arg_unsafe_ptr,
         arg.nr_args,
     )
@@ -76,8 +78,10 @@ fn io_uring_register(
 
 
 @always_inline
-fn io_uring_enter(
-    fd: IoUringOwnedFd,
+fn io_uring_enter[
+    Fd: IoUringFileDescriptor
+](
+    fd: Fd,
     *,
     to_submit: UInt32,
     min_complete: UInt32,
@@ -86,6 +90,9 @@ fn io_uring_enter(
 ) raises -> UInt32:
     """Initiates and/or waits for asynchronous I/O to complete.
     [Linux]: https://man7.org/linux/man-pages/man2/io_uring_enter.2.html.
+
+    Parameters:
+        Fd: The type of the file descriptor returned by `io_uring_setup`.
 
     Args:
         fd: The file descriptor returned by `io_uring_setup`.
@@ -104,10 +111,10 @@ fn io_uring_enter(
         `Errno` if the syscall returned an error.
     """
     res = syscall[__NR_io_uring_enter, Scalar[DType.index]](
-        fd.io_uring_fd(),
+        fd.unsafe_fd(),
         to_submit,
         min_complete,
-        flags | arg.flags | fd.ENTER_FLAGS,
+        flags | arg.flags | Fd.ENTER_FLAGS,
         arg.arg_unsafe_ptr,
         arg.size,
     )
@@ -127,7 +134,7 @@ struct IoUringParams(Defaultable):
     var sq_off: io_sqring_offsets
     var cq_off: io_cqring_offsets
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.sq_entries = 0
         self.cq_entries = 0
@@ -141,36 +148,33 @@ struct IoUringParams(Defaultable):
         self.cq_off = io_cqring_offsets()
 
 
-alias SQE64 = SQE.SQE64
-alias SQE128 = SQE.SQE128
+alias SQE64 = SQE {
+    id: 0,
+    size: 64,
+    align: 8,
+    array_size: 0,
+    setup_flags: IoUringSetupFlags(),
+}
+
+alias SQE128 = SQE {
+    id: 1,
+    size: 128,
+    align: 8,
+    array_size: 64,
+    setup_flags: IoUringSetupFlags.SQE128,
+}
 
 
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct SQE:
-    alias SQE64 = Self {
-        id: 0,
-        size: 64,
-        align: 8,
-        array_size: 0,
-        setup_flags: IoUringSetupFlags(),
-    }
-
-    alias SQE128 = Self {
-        id: 1,
-        size: 128,
-        align: 8,
-        array_size: 64,
-        setup_flags: IoUringSetupFlags.SQE128,
-    }
-
     var id: UInt8
     var size: IntLiteral
     var align: IntLiteral
     var array_size: IntLiteral
     var setup_flags: IoUringSetupFlags
 
-    @always_inline("nodebug")
+    @always_inline
     fn __is__(self, rhs: Self) -> Bool:
         """Defines whether one SQE has the same identity as another.
 
@@ -183,8 +187,25 @@ struct SQE:
         return self.id == rhs.id
 
 
-alias CQE16 = CQE.CQE16
-alias CQE32 = CQE.CQE32
+alias CQE16 = CQE {
+    id: 0,
+    size: 16,
+    align: 8,
+    array_size: 0,
+    rings_size: 64,
+    setup_flags: IoUringSetupFlags(),
+}
+
+
+alias CQE32 = CQE {
+    id: 1,
+    size: 32,
+    align: 8,
+    array_size: 2,
+    rings_size: 64 * 2,
+    setup_flags: IoUringSetupFlags.CQE32,
+}
+
 
 alias CQE_SIZE_DEFAULT = CQE16.size
 alias CQE_SIZE_MAX = CQE32.size
@@ -193,24 +214,6 @@ alias CQE_SIZE_MAX = CQE32.size
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct CQE:
-    alias CQE16 = Self {
-        id: 0,
-        size: 16,
-        align: 8,
-        array_size: 0,
-        rings_size: 64,
-        setup_flags: IoUringSetupFlags(),
-    }
-
-    alias CQE32 = Self {
-        id: 1,
-        size: 32,
-        align: 8,
-        array_size: 2,
-        rings_size: 64 * 2,
-        setup_flags: IoUringSetupFlags.CQE32,
-    }
-
     var id: UInt8
     var size: IntLiteral
     var align: IntLiteral
@@ -222,7 +225,7 @@ struct CQE:
     """
     var setup_flags: IoUringSetupFlags
 
-    @always_inline("nodebug")
+    @always_inline
     fn __is__(self, rhs: Self) -> Bool:
         """Defines whether one CQE has the same identity as another.
 
@@ -240,7 +243,7 @@ struct addr3_struct(Defaultable):
     var addr3: UInt64
     var __pad2: DTypeArray[DType.uint64, 1]
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.addr3 = 0
         self.__pad2 = DTypeArray[DType.uint64, 1]()
@@ -268,7 +271,7 @@ struct Sqe[type: SQE]:
     var addr3_or_optval_or_cmd: addr3_struct
     var _big_sqe: Self.Array
 
-    @always_inline("nodebug")
+    @always_inline
     fn cmd(
         inout self: Sqe[SQE128],
     ) -> ref [self] DTypeArray[DType.uint8, 80]:
@@ -287,7 +290,7 @@ struct Cqe[type: CQE]:
     var flags: IoUringCqeFlags
     var _big_cqe: DTypeArray[DType.uint64, type.array_size]
 
-    @always_inline("nodebug")
+    @always_inline
     fn cmd(
         self: Cqe[CQE32],
     ) -> ref [self._big_cqe] __type_of(self._big_cqe):
@@ -734,7 +737,7 @@ struct RegisterArg[lifetime: MutableLifetime]:
     var nr_args: UInt32
     """The number of resources for registration/deregistration."""
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(
         inout self,
         *,
@@ -748,7 +751,7 @@ struct RegisterArg[lifetime: MutableLifetime]:
 
 
 struct NoRegisterArg:
-    alias ENABLE_RINGS = RegisterArg[StaticConstantLifetime](
+    alias ENABLE_RINGS = RegisterArg[StaticMutableLifetime](
         opcode=IoUringRegisterOp.REGISTER_ENABLE_RINGS,
         arg_unsafe_ptr=UnsafePointer[c_void](),
         nr_args=0,
@@ -762,13 +765,13 @@ struct IoUringRsrcUpdate(AsRegisterArg, Defaultable):
     var resv: UInt32
     var data: UInt64
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.offset = 0
         self.resv = 0
         self.data = 0
 
-    @always_inline("nodebug")
+    @always_inline
     fn as_register_arg[
         lifetime: MutableLifetime
     ](ref [lifetime]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
@@ -812,7 +815,7 @@ struct IoUringGetEventsArg(Defaultable):
     var pad: UInt32
     var ts: UInt64
 
-    @always_inline("nodebug")
+    @always_inline
     fn __init__(inout self):
         self.sigmask = 0
         self.sigmask_sz = 0
