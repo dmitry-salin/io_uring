@@ -34,9 +34,7 @@ fn _socket(
 
 
 @always_inline
-fn _bind[
-    Fd: FileDescriptor, Addr: SocketAddr
-](fd: Fd, ref [_]addr: Addr) raises:
+fn _bind[Fd: FileDescriptor, Addr: SocketAddr](fd: Fd, ref addr: Addr) raises:
     constrained[is_x86_64()]()
 
     res = syscall[__NR_bind, Scalar[DType.index], uses_memory=False](

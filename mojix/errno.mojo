@@ -156,7 +156,7 @@ struct Errno(Stringable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, errno: UInt16):
+    fn __init__(out self, *, errno: UInt16):
         """Constructs an Errno from the error number.
 
         Args:
@@ -165,7 +165,7 @@ struct Errno(Stringable):
         self = Self(negated_errno=-errno.cast[DType.int16]())
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, error: Error) raises:
+    fn __init__(out self, *, error: Error) raises:
         """Constructs an Errno from the Error message.
 
         Args:
@@ -177,7 +177,7 @@ struct Errno(Stringable):
         self = Self(negated_errno=int(str(error)))
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, negated_errno: Int16):
+    fn __init__(out self, *, negated_errno: Int16):
         """Constructs an Errno from the negated error number.
 
         Args:

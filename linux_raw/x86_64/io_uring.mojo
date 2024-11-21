@@ -175,7 +175,7 @@ struct io_sqring_offsets(Defaultable):
     var user_addr: UInt64
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.head = 0
         self.tail = 0
         self.ring_mask = 0
@@ -200,7 +200,7 @@ struct io_cqring_offsets(Defaultable):
     var user_addr: UInt64
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.head = 0
         self.tail = 0
         self.ring_mask = 0

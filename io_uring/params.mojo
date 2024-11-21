@@ -19,7 +19,7 @@ struct Params(Defaultable):
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(inout self):
+    fn __init__(out self):
         self.flags = IoUringSetupFlags.NO_SQARRAY
         self._cq_entries = 0
         self.sq_thread_cpu = 0
@@ -58,9 +58,7 @@ struct Entries:
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(
-        inout self, *, sq_entries: UInt32, params: IoUringParams
-    ) raises:
+    fn __init__(out self, *, sq_entries: UInt32, params: IoUringParams) raises:
         if sq_entries == 0:
             raise str(Errno.EINVAL)
 

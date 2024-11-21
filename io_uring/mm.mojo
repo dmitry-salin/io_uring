@@ -36,7 +36,7 @@ struct Region(Movable):
     @always_inline
     fn __init__[
         Fd: FileDescriptor
-    ](inout self, *, fd: Fd, offset: UInt64, len: UInt) raises:
+    ](out self, *, fd: Fd, offset: UInt64, len: UInt) raises:
         self.ptr = mmap(
             unsafe_ptr=UnsafePointer[c_void](),
             len=len,
@@ -49,7 +49,7 @@ struct Region(Movable):
         self.len = len
 
     @always_inline
-    fn __init__(inout self, *, len: UInt, flags: MapFlags) raises:
+    fn __init__(out self, *, len: UInt, flags: MapFlags) raises:
         self.ptr = mmap_anonymous(
             unsafe_ptr=UnsafePointer[c_void](),
             len=len,
@@ -67,7 +67,7 @@ struct Region(Movable):
             pass
 
     @always_inline
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """Moves data of an existing Region into a new one.
 
         Args:
@@ -115,12 +115,12 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self, *, owned sqes_mem: Region, owned sq_cq_mem: Region):
+    fn __init__(out self, *, owned sqes_mem: Region, owned sq_cq_mem: Region):
         self.sqes_mem = sqes_mem^
         self.sq_cq_mem = sq_cq_mem^
 
     fn __init__(
-        inout self, sq_entries: UInt32, inout params: IoUringParams
+        out self, sq_entries: UInt32, inout params: IoUringParams
     ) raises:
         entries = Entries(sq_entries=sq_entries, params=params)
         # FIXME: Get the actual page size value at runtime.
@@ -165,7 +165,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         params.sq_off.user_addr = self.sqes_mem.addr()
 
     @always_inline
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """Moves data of an existing MemoryMapping into a new one.
 
         Args:

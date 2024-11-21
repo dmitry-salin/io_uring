@@ -25,7 +25,7 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(inout self, params: IoUringParams, *, sq_cq_mem: Region) raises:
+    fn __init__(out self, params: IoUringParams, *, sq_cq_mem: Region) raises:
         constrained[
             type is CQE16 or type is CQE32,
             "CQE must be equal to CQE16 or CQE32",
@@ -66,7 +66,7 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
         self.cqe_tail = self._tail[]
 
     @always_inline
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """Moves data of an existing Cq into a new one.
 
         Args:
@@ -122,15 +122,15 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
 
 
 @register_passable
-struct CqPtr[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
-    var cq: Pointer[Cq[type], cq_lifetime]
+struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
+    var cq: Pointer[Cq[type], cq_origin]
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self, ref [cq_lifetime]cq: Cq[type]):
+    fn __init__(out self, ref [cq_origin]cq: Cq[type]):
         self.cq = Pointer.address_of(cq)
 
     @always_inline
@@ -147,10 +147,8 @@ struct CqPtr[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
 
     @always_inline
     fn __next__[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self) -> ref [_lit_mut_cast[lifetime, False].result] Cqe[
-        type
-    ]:
+        origin: MutableOrigin
+    ](ref [origin]self) -> ref [_lit_mut_cast[origin, False].result] Cqe[type]:
         ptr = self.cq[].cqes.offset(
             int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
@@ -158,7 +156,7 @@ struct CqPtr[type: CQE, cq_lifetime: MutableLifetime](Sized, Boolable):
         return ptr[]
 
     @always_inline
-    fn __hasmore__(self) -> Bool:
+    fn __has_next__(self) -> Bool:
         return self.__len__() > 0
 
     # ===------------------------------------------------------------------=== #

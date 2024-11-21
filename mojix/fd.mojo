@@ -22,7 +22,7 @@ like `mmap`, where it indicates that the argument is omitted.
 
 
 trait FromUnsafeFileDescriptor:
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
+    fn __init__(out self, *, unsafe_fd: UnsafeFd):
         ...
 
 
@@ -69,7 +69,7 @@ trait IoUringFileDescriptor(
 
 
 @register_passable("trivial")
-struct Fd[lifetime: ImmutableLifetime = ImmutableAnyLifetime](
+struct Fd[origin: ImmutableOrigin = ImmutableAnyOrigin](
     FileDescriptor,
     IoUringFileDescriptor,
 ):
@@ -82,7 +82,7 @@ struct Fd[lifetime: ImmutableLifetime = ImmutableAnyLifetime](
     var _fd: UnsafeFd
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
+    fn __init__(out self, *, unsafe_fd: UnsafeFd):
         """Constructs an Fd from an unsafe file descriptor.
 
         Args:
@@ -135,7 +135,7 @@ struct IoUringFd[is_registered: Bool](FileDescriptor, IoUringFileDescriptor):
     var _fd: UnsafeFd
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
+    fn __init__(out self, *, unsafe_fd: UnsafeFd):
         """Constructs an IoUringFd from an unsafe file descriptor.
 
         Args:
@@ -189,7 +189,7 @@ struct OwnedFd[is_registered: Bool = False](FileDescriptor, IoUringFileDescripto
     # ===------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, unsafe_fd: UnsafeFd):
+    fn __init__(out self, *, unsafe_fd: UnsafeFd):
         """Constructs an OwnedFd from an unsafe file descriptor.
 
         Args:

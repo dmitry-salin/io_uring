@@ -1,7 +1,7 @@
 from .ctypes import c_void
 from .fd import UnsafeFd, IoUringFileDescriptor, OwnedFd
 from .errno import unsafe_decode_result
-from .utils import _aligned_u64, StaticMutableLifetime
+from .utils import _aligned_u64, StaticMutableOrigin
 from linux_raw.x86_64.io_uring import *
 from linux_raw.x86_64.general import (
     __NR_io_uring_setup,
@@ -135,7 +135,7 @@ struct IoUringParams(Defaultable):
     var cq_off: io_cqring_offsets
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.sq_entries = 0
         self.cq_entries = 0
         self.flags = IoUringSetupFlags()
@@ -244,7 +244,7 @@ struct addr3_struct(Defaultable):
     var __pad2: DTypeArray[DType.uint64, 1]
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.addr3 = 0
         self.__pad2 = DTypeArray[DType.uint64, 1]()
 
@@ -321,7 +321,7 @@ struct IoUringSetupFlags(Defaultable, Boolable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -388,7 +388,7 @@ struct IoUringFeatureFlags(Defaultable, Boolable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -459,7 +459,7 @@ struct IoUringRegisterFlags(Defaultable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -473,7 +473,7 @@ struct IoUringSqFlags(Defaultable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -489,7 +489,7 @@ struct IoUringEnterFlags(Defaultable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -528,7 +528,7 @@ struct IoUringSqeFlags(Defaultable):
     var value: UInt8
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -564,7 +564,7 @@ struct IoUringCqeFlags(Defaultable, Boolable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -652,7 +652,7 @@ struct IoUringFsyncFlags(Defaultable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -675,7 +675,7 @@ struct IoUringPollFlags(Defaultable):
     var value: UInt32
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -689,7 +689,7 @@ struct IoUringSendFlags(Defaultable):
     var value: UInt16
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -703,7 +703,7 @@ struct IoUringRecvFlags(Defaultable):
     var value: UInt16
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
@@ -715,21 +715,21 @@ struct IoUringAcceptFlags(Defaultable):
     var value: UInt16
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
 
 trait AsRegisterArg:
     fn as_register_arg[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
-        lifetime
+        origin: MutableOrigin
+    ](ref [origin]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
+        origin
     ]:
         ...
 
 
 @register_passable("trivial")
-struct RegisterArg[lifetime: MutableLifetime]:
+struct RegisterArg[origin: MutableOrigin]:
     var opcode: IoUringRegisterOp
     """The operation code."""
     var arg_unsafe_ptr: UnsafePointer[c_void]
@@ -739,7 +739,7 @@ struct RegisterArg[lifetime: MutableLifetime]:
 
     @always_inline
     fn __init__(
-        inout self,
+        out self,
         *,
         opcode: IoUringRegisterOp,
         arg_unsafe_ptr: UnsafePointer[c_void],
@@ -751,7 +751,7 @@ struct RegisterArg[lifetime: MutableLifetime]:
 
 
 struct NoRegisterArg:
-    alias ENABLE_RINGS = RegisterArg[StaticMutableLifetime](
+    alias ENABLE_RINGS = RegisterArg[StaticMutableOrigin](
         opcode=IoUringRegisterOp.REGISTER_ENABLE_RINGS,
         arg_unsafe_ptr=UnsafePointer[c_void](),
         nr_args=0,
@@ -766,19 +766,19 @@ struct IoUringRsrcUpdate(AsRegisterArg, Defaultable):
     var data: UInt64
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.offset = 0
         self.resv = 0
         self.data = 0
 
     @always_inline
     fn as_register_arg[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
-        lifetime
+        origin: MutableOrigin
+    ](ref [origin]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
+        origin
     ]:
         _aligned_u64[Self]()
-        return RegisterArg[lifetime](
+        return RegisterArg[origin](
             opcode=unsafe_opcode,
             arg_unsafe_ptr=UnsafePointer.address_of(self).bitcast[c_void](),
             nr_args=1,
@@ -786,9 +786,7 @@ struct IoUringRsrcUpdate(AsRegisterArg, Defaultable):
 
 
 @register_passable("trivial")
-struct EnterArg[
-    size: UInt, flags: IoUringEnterFlags, lifetime: ImmutableLifetime
-]:
+struct EnterArg[size: UInt, flags: IoUringEnterFlags, origin: ImmutableOrigin]:
     """
     Parameters:
         size: The size of the enter argument.
@@ -799,11 +797,11 @@ struct EnterArg[
     var arg_unsafe_ptr: UnsafePointer[c_void]
 
     @always_inline("nodebug")
-    fn __init__(inout self, *, arg_unsafe_ptr: UnsafePointer[c_void]):
+    fn __init__(out self, *, arg_unsafe_ptr: UnsafePointer[c_void]):
         self.arg_unsafe_ptr = arg_unsafe_ptr
 
 
-alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), StaticConstantLifetime](
+alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), StaticConstantOrigin](
     arg_unsafe_ptr=UnsafePointer[c_void]()
 )
 
@@ -816,7 +814,7 @@ struct IoUringGetEventsArg(Defaultable):
     var ts: UInt64
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.sigmask = 0
         self.sigmask_sz = 0
         self.pad = 0

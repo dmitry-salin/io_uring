@@ -3,10 +3,10 @@ from sys.info import alignof, sizeof, is_big_endian
 from linux_raw.utils import DTypeArray
 
 
-alias StaticMutableLifetime = __mlir_attr[
-    `#lit.lifetime.field<`,
-    `#lit.static.lifetime : !lit.lifetime<1>`,
-    `, "__constants__"> : !lit.lifetime<1>`,
+alias StaticMutableOrigin = __mlir_attr[
+    `#lit.origin.field<`,
+    `#lit.static.origin : !lit.origin<1>`,
+    `, "__constants__"> : !lit.origin<1>`,
 ]
 
 

@@ -7,8 +7,8 @@ from memory import UnsafePointer
 
 
 struct WaitArg[
-    sigmask_lifetime: ImmutableLifetime,
-    timespec_lifetime: ImmutableLifetime,
+    sigmask_origin: ImmutableOrigin,
+    timespec_origin: ImmutableOrigin,
 ]:
     alias enter_flags = IoUringEnterFlags.EXT_ARG
 
@@ -19,15 +19,15 @@ struct WaitArg[
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.arg = IoUringGetEventsArg()
 
     @always_inline
     fn __init__[
-        lifetime: ImmutableLifetime
+        origin: ImmutableOrigin
     ](
-        inout self: WaitArg[lifetime, StaticConstantLifetime],
-        ref [lifetime]sigmask: sigset_t,
+        out self: WaitArg[origin, StaticConstantOrigin],
+        ref [origin]sigmask: sigset_t,
     ):
         self.arg = IoUringGetEventsArg(
             int(UnsafePointer.address_of(sigmask)), sizeof[sigset_t](), 0, 0
@@ -35,10 +35,10 @@ struct WaitArg[
 
     @always_inline
     fn __init__[
-        lifetime: ImmutableLifetime
+        origin: ImmutableOrigin
     ](
-        inout self: WaitArg[StaticConstantLifetime, lifetime],
-        ref [lifetime]timespec: Timespec,
+        out self: WaitArg[StaticConstantOrigin, origin],
+        ref [origin]timespec: Timespec,
     ):
         self.arg = IoUringGetEventsArg(
             0, 0, 0, int(UnsafePointer.address_of(timespec))
@@ -46,9 +46,9 @@ struct WaitArg[
 
     @always_inline
     fn __init__(
-        inout self,
-        ref [sigmask_lifetime]sigmask: sigset_t,
-        ref [timespec_lifetime]timespec: Timespec,
+        out self,
+        ref [sigmask_origin]sigmask: sigset_t,
+        ref [timespec_origin]timespec: Timespec,
     ):
         self.arg = IoUringGetEventsArg(
             int(UnsafePointer.address_of(sigmask)),
@@ -67,8 +67,8 @@ struct WaitArg[
     ) -> EnterArg[
         sizeof[IoUringGetEventsArg](),
         Self.enter_flags,
-        __lifetime_of(self),
+        __origin_of(self),
     ]:
         return EnterArg[
-            sizeof[IoUringGetEventsArg](), Self.enter_flags, __lifetime_of(self)
+            sizeof[IoUringGetEventsArg](), Self.enter_flags, __origin_of(self)
         ](arg_unsafe_ptr=UnsafePointer.address_of(self.arg).bitcast[c_void]())

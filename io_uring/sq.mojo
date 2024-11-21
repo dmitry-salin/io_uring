@@ -36,7 +36,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
     # ===------------------------------------------------------------------=== #
 
     fn __init__(
-        inout self,
+        out self,
         params: IoUringParams,
         *,
         sq_cq_mem: Region,
@@ -92,7 +92,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
         self.sqe_tail = self._tail[]
 
     @always_inline
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """Moves data of an existing Sq into a new one.
 
         Args:
@@ -182,17 +182,17 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
 
 
 @register_passable
-struct SqPtr[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
+struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
     Sized, Boolable
 ):
-    var sq: Pointer[Sq[type, polling], sq_lifetime]
+    var sq: Pointer[Sq[type, polling], sq_origin]
 
     # ===------------------------------------------------------------------=== #
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self, ref [sq_lifetime]sq: Sq[type, polling]):
+    fn __init__(out self, ref [sq_origin]sq: Sq[type, polling]):
         self.sq = Pointer.address_of(sq)
 
     # ===------------------------------------------------------------------=== #
@@ -205,8 +205,8 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
 
     @always_inline
     fn __next__[
-        lifetime: MutableLifetime
-    ](ref [lifetime]self) -> ref [lifetime] Sqe[type]:
+        origin: MutableOrigin
+    ](ref [origin]self) -> ref [origin] Sqe[type]:
         ptr = self.sq[].sqes.offset(
             int(self.sq[].sqe_tail & self.sq[].ring_mask)
         )
@@ -214,7 +214,7 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_lifetime: MutableLifetime](
         return _nop_data(ptr[])
 
     @always_inline
-    fn __hasmore__(self) -> Bool:
+    fn __has_next__(self) -> Bool:
         return self.__len__() > 0
 
     # ===------------------------------------------------------------------=== #

@@ -155,7 +155,7 @@ struct MapFlags(Defaultable):
     var value: c_uint
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -193,7 +193,7 @@ struct ProtFlags(Defaultable):
     var value: c_uint
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")

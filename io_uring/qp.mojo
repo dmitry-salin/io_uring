@@ -49,10 +49,10 @@ struct IoUring[
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(inout self, *, sq_entries: UInt32) raises:
+    fn __init__(out self, *, sq_entries: UInt32) raises:
         self.__init__(sq_entries=sq_entries, params=Params())
 
-    fn __init__(inout self, *, sq_entries: UInt32, params: Params) raises:
+    fn __init__(out self, *, sq_entries: UInt32, params: Params) raises:
         io_uring_params = IoUringParams(
             0,
             params._cq_entries,
@@ -70,7 +70,7 @@ struct IoUring[
             self.mem.dontfork()
 
     fn __init__(
-        inout self, *, sq_entries: UInt32, inout params: IoUringParams
+        out self, *, sq_entries: UInt32, inout params: IoUringParams
     ) raises:
         constrained[
             polling is not SQPOLL,
@@ -120,7 +120,7 @@ struct IoUring[
         self.fd^.__del__()
 
     @always_inline
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """Moves data of an existing IoUring into a new one.
 
         Args:
@@ -138,14 +138,14 @@ struct IoUring[
     @always_inline
     fn sq(
         inout self,
-    ) -> SqPtr[sqe, polling, __lifetime_of(self._sq)]:
+    ) -> SqPtr[sqe, polling, __origin_of(self._sq)]:
         self.sync_sq_head()
         return self.unsynced_sq()
 
     @always_inline
     fn unsynced_sq(
         inout self,
-    ) -> SqPtr[sqe, polling, __lifetime_of(self._sq)]:
+    ) -> SqPtr[sqe, polling, __origin_of(self._sq)]:
         return self._sq
 
     @always_inline
@@ -198,13 +198,13 @@ struct IoUring[
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32
-    ) raises -> CqPtr[cqe, __lifetime_of(self._cq)]:
+    ) raises -> CqPtr[cqe, __origin_of(self._cq)]:
         return self.cq(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn cq(
         inout self, *, wait_nr: UInt32, arg: EnterArg
-    ) raises -> CqPtr[cqe, __lifetime_of(self._cq)]:
+    ) raises -> CqPtr[cqe, __origin_of(self._cq)]:
         self.flush_cq(wait_nr, arg)
         return self._cq
 

@@ -24,8 +24,8 @@ from memory import UnsafePointer
 
 @always_inline
 fn _nop_data[
-    type: SQE, lifetime: MutableLifetime
-](ref [lifetime]sqe: Sqe[type]) -> ref [lifetime] Sqe[type]:
+    type: SQE, origin: MutableOrigin
+](ref [origin]sqe: Sqe[type]) -> ref [origin] Sqe[type]:
     sqe.opcode = IoUringOp.NOP
     sqe.flags = IoUringSqeFlags.CQE_SKIP_SUCCESS
     return sqe
@@ -93,29 +93,24 @@ trait Operation(SqeAttrs, Movable):
 
 
 @register_passable
-struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
+struct Accept[type: SQE, origin: MutableOrigin](Operation):
     """Accept a new connection on a socket, equivalent to `accept4(2)`."""
 
     alias SINCE = 5.5
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor
-    ](inout self, ref [lifetime]sqe: Sqe[type], fd: Fd):
+    ](out self, ref [origin]sqe: Sqe[type], fd: Fd):
         self.__init__(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
         Addr: SocketAddrMut,
-    ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: Fd,
-        ref [_]unsafe_addr: Addr,
-    ):
+    ](out self, ref [origin]sqe: Sqe[type], fd: Fd, ref unsafe_addr: Addr):
         self.__init__(
             sqe,
             fd,
@@ -127,8 +122,8 @@ struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         addr_unsafe_ptr: UnsafePointer[c_void],
         addr_len_unsafe_ptr: UnsafePointer[c_void],
@@ -165,23 +160,17 @@ struct Accept[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
+struct Connect[type: SQE, origin: MutableOrigin](Operation):
     """Connect a socket, equivalent to `connect(2)`."""
 
     alias SINCE = 5.5
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor, Addr: SocketAddr
-    ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
-        fd: Fd,
-        *,
-        ref [_]unsafe_addr: Addr,
-    ):
+    ](out self, ref [origin]sqe: Sqe[type], fd: Fd, *, ref unsafe_addr: Addr):
         _prep_addr(
             sqe,
             IoUringOp.CONNECT,
@@ -208,7 +197,7 @@ struct Connect[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Nop[type: SQE, lifetime: MutableLifetime](Operation):
+struct Nop[type: SQE, origin: MutableOrigin](Operation):
     """Do not perform any I/O.
     A no-op is more useful than may appear at first glance.
     For example, you could set `IOSQE_IO_DRAIN_BIT` using `sqe_flags()`,
@@ -219,10 +208,10 @@ struct Nop[type: SQE, lifetime: MutableLifetime](Operation):
 
     alias SINCE = 5.1
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
-    fn __init__(inout self, ref [lifetime]sqe: Sqe[type]):
+    fn __init__(out self, ref [origin]sqe: Sqe[type]):
         _prep_rw(
             sqe,
             IoUringOp.NOP,
@@ -249,19 +238,19 @@ struct Nop[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Read[type: SQE, lifetime: MutableLifetime](Operation):
+struct Read[type: SQE, origin: MutableOrigin](Operation):
     """Read, equivalent to `pread(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -313,19 +302,19 @@ struct Read[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Recv[type: SQE, lifetime: MutableLifetime](Operation):
+struct Recv[type: SQE, origin: MutableOrigin](Operation):
     """Receive a message from a socket, equivalent to `recv(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -367,19 +356,19 @@ struct Recv[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Send[type: SQE, lifetime: MutableLifetime](Operation):
+struct Send[type: SQE, origin: MutableOrigin](Operation):
     """Send a message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -416,19 +405,19 @@ struct Send[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct SendZc[type: SQE, lifetime: MutableLifetime](Operation):
+struct SendZc[type: SQE, origin: MutableOrigin](Operation):
     """Send a zerocopy message on a socket, equivalent to `send(2)`."""
 
     alias SINCE = 6.0
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,
@@ -476,19 +465,19 @@ struct SendZc[type: SQE, lifetime: MutableLifetime](Operation):
 
 
 @register_passable
-struct Write[type: SQE, lifetime: MutableLifetime](Operation):
+struct Write[type: SQE, origin: MutableOrigin](Operation):
     """Write, equivalent to `pwrite(2)`."""
 
     alias SINCE = 5.6
 
-    var sqe: Pointer[Sqe[type], lifetime]
+    var sqe: Pointer[Sqe[type], origin]
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
     ](
-        inout self,
-        ref [lifetime]sqe: Sqe[type],
+        out self,
+        ref [origin]sqe: Sqe[type],
         fd: Fd,
         unsafe_ptr: UnsafePointer[c_void],
         len: UInt,

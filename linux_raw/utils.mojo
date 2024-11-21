@@ -33,7 +33,7 @@ struct DTypeArray[
     # ===------------------------------------------------------------------===#
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         """Constructs a default DTypeArray."""
         Self._is_valid()
         zero = Scalar[dtype](
@@ -49,7 +49,7 @@ struct DTypeArray[
         self.array = __mlir_op.`pop.array.repeat`[_type = Self.type](zero)
 
     @always_inline
-    fn __init__(inout self, *, unsafe_uninitialized: Bool):
+    fn __init__(out self, *, unsafe_uninitialized: Bool):
         """Constructs a DTypeArray with uninitialized memory.
         Note that this is highly unsafe and should be used with caution.
 
@@ -58,10 +58,13 @@ struct DTypeArray[
                 should be initialized. Always set to `True`
                 (it's not actually used inside the constructor).
         """
-        self.array = __mlir_op.`kgen.undef`[_type = Self.type]()
+        self.array = __mlir_op.`kgen.param.constant`[
+            _type = Self.type,
+            value = __mlir_attr[`#kgen.unknown : `, Self.type],
+        ]()
 
     @always_inline
-    fn __init__(inout self, fill: Scalar[dtype]):
+    fn __init__(out self, fill: Scalar[dtype]):
         """Constructs a DTypeArray where each element is the supplied `fill`.
 
         Args:
@@ -71,7 +74,7 @@ struct DTypeArray[
         self.array = __mlir_op.`pop.array.repeat`[_type = Self.type](fill)
 
     @always_inline
-    fn __init__(inout self, *, other: Self):
+    fn __init__(out self, *, other: Self):
         """Explicitly copy constructs a DTypeArray.
 
         Args:
@@ -104,7 +107,7 @@ struct DTypeArray[
     # ===------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __getitem__[idx: UInt](self: Self) -> Scalar[dtype]:
+    fn __getitem__[idx: UInt](self) -> Scalar[dtype]:
         """Get the element at the given index.
 
         Parameters:
@@ -122,7 +125,7 @@ struct DTypeArray[
         ](self.array)
 
     @always_inline("nodebug")
-    fn __getitem__(ref [_]self: Self, idx: UInt) -> Scalar[dtype]:
+    fn __getitem__(ref self, idx: UInt) -> Scalar[dtype]:
         """Get the element at the given index.
 
         Args:

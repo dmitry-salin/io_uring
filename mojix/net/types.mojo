@@ -23,22 +23,22 @@ alias Backlog = c_uint
 trait SocketAddr(Defaultable):
     alias ADDR_LEN: socklen_t
 
-    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         ...
 
 
 trait SocketAddrMut(Defaultable):
-    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         ...
 
-    fn len_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn len_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         ...
 
 
 trait SocketAddrStor:
     alias SocketAddrStor: SocketAddr
 
-    fn addr_stor(ref [_]self) -> SocketAddrStor as out:
+    fn addr_stor(ref self) -> SocketAddrStor as out:
         ...
 
 
@@ -62,7 +62,7 @@ struct SocketAddrStorV4(SocketAddr):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         _size_eq[Self, 16]()
         _align_eq[Self, 4]()
         self.addr = sockaddr_in(
@@ -71,8 +71,8 @@ struct SocketAddrStorV4(SocketAddr):
 
     @always_inline
     fn __init__[
-        lifetime: ImmutableLifetime
-    ](inout self, ref [lifetime]addr: SocketAddrV4):
+        origin: ImmutableOrigin
+    ](out self, ref [origin]addr: SocketAddrV4):
         _size_eq[Self, 16]()
         _align_eq[Self, 4]()
         _size_eq[addr.Octets, __be32]()
@@ -94,7 +94,7 @@ struct SocketAddrStorV4(SocketAddr):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         return UnsafePointer.address_of(self.addr).bitcast[c_void]()
 
 
@@ -110,7 +110,7 @@ struct SocketAddrStorAnyMut[Addr: SocketAddr](SocketAddrMut):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self):
+    fn __init__(out self):
         self.addr = Addr()
         self.len = Addr.ADDR_LEN
 
@@ -119,11 +119,11 @@ struct SocketAddrStorAnyMut[Addr: SocketAddr](SocketAddrMut):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn addr_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn addr_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         return self.addr.addr_unsafe_ptr()
 
     @always_inline
-    fn len_unsafe_ptr(ref [_]self) -> UnsafePointer[c_void]:
+    fn len_unsafe_ptr(ref self) -> UnsafePointer[c_void]:
         return UnsafePointer.address_of(self.len).bitcast[c_void]()
 
 
@@ -139,7 +139,7 @@ struct IpAddrV4:
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __init__(inout self, a: UInt8, b: UInt8, c: UInt8, d: UInt8):
+    fn __init__(out self, a: UInt8, b: UInt8, c: UInt8, d: UInt8):
         self.octets = Self.Octets(a, b, c, d)
 
 
@@ -159,7 +159,7 @@ struct SocketAddrV4(SocketAddrStor, SocketAddrStorMut):
 
     @always_inline
     fn __init__(
-        inout self, a: UInt8, b: UInt8, c: UInt8, d: UInt8, *, port: UInt16
+        out self, a: UInt8, b: UInt8, c: UInt8, d: UInt8, *, port: UInt16
     ):
         self.ip = IpAddrV4(a, b, c, d)
         self.port = port
@@ -169,7 +169,7 @@ struct SocketAddrV4(SocketAddrStor, SocketAddrStorMut):
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn octets(ref [_]self) -> ref [self.ip.octets] Self.Octets:
+    fn octets(ref self) -> ref [self.ip.octets] Self.Octets:
         return self.ip.octets
 
     # ===------------------------------------------------------------------=== #
@@ -177,7 +177,7 @@ struct SocketAddrV4(SocketAddrStor, SocketAddrStorMut):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn addr_stor(ref [_]self) -> Self.SocketAddrStor as out:
+    fn addr_stor(ref self) -> Self.SocketAddrStor as out:
         out = Self.SocketAddrStor(self)
 
     @staticmethod
@@ -214,7 +214,7 @@ struct SocketFlags(Defaultable):
     var value: c_uint
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         self.value = 0
 
     @always_inline("nodebug")
@@ -287,7 +287,7 @@ struct Protocol(Defaultable):
     var id: c_uint
 
     @always_inline("nodebug")
-    fn __init__(inout self):
+    fn __init__(out self):
         constrained[Self.IP.id == 0]()
         self.id = 0
 

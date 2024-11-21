@@ -51,7 +51,7 @@ fn socket(
 @always_inline
 fn bind[
     Fd: FileDescriptor, Addr: SocketAddrStor
-](fd: Fd, ref [_]addr: Addr) raises:
+](fd: Fd, ref addr: Addr) raises:
     """Binds a socket to an address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
@@ -59,7 +59,7 @@ fn bind[
 
 
 @always_inline
-fn bind[Fd: FileDescriptor, Addr: SocketAddr](fd: Fd, ref [_]addr: Addr) raises:
+fn bind[Fd: FileDescriptor, Addr: SocketAddr](fd: Fd, ref addr: Addr) raises:
     """Binds a socket to an address.
     [Linux]: https://man7.org/linux/man-pages/man2/bind.2.html.
     """
