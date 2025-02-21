@@ -129,6 +129,7 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    @implicit
     fn __init__(out self, ref [cq_origin]cq: Cq[type]):
         self.cq = Pointer.address_of(cq)
 

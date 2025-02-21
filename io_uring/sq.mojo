@@ -192,6 +192,7 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    @implicit
     fn __init__(out self, ref [sq_origin]sq: Sq[type, polling]):
         self.sq = Pointer.address_of(sq)
 

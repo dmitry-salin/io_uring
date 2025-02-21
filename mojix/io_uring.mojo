@@ -327,6 +327,11 @@ struct IoUringSetupFlags(Defaultable, Boolable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
@@ -392,6 +397,11 @@ struct IoUringFeatureFlags(Defaultable, Boolable):
     @always_inline("nodebug")
     fn __init__(out self):
         self.value = 0
+
+    @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
 
     @always_inline("nodebug")
     fn __and__(self, rhs: Self) -> Self:
@@ -495,6 +505,11 @@ struct IoUringEnterFlags(Defaultable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
@@ -532,6 +547,11 @@ struct IoUringSqeFlags(Defaultable):
     @always_inline("nodebug")
     fn __init__(out self):
         self.value = 0
+
+    @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt8):
+        self.value = value
 
     @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
