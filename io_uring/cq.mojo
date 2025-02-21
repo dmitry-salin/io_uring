@@ -150,7 +150,7 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
         origin: MutableOrigin
     ](ref [origin]self) -> ref [_lit_mut_cast[origin, False].result] Cqe[type]:
         ptr = self.cq[].cqes.offset(
-            int(self.cq[].cqe_head & self.cq[].ring_mask)
+            Int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
         self.cq[].cqe_head += 1
         return ptr[]
@@ -179,4 +179,4 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
         Returns:
             `False` if the cq is empty, `True` if there is at least one entry.
         """
-        return bool(self.cq[])
+        return Bool(self.cq[])

@@ -189,7 +189,7 @@ struct IoUring[
         # can see the store to the `self._sq._tail` before we read the flags.
         # [Reference]: https://github.com/modularml/mojo/issues/3162.
 
-        if unlikely(bool(self._sq.flags() & IoUringSqFlags.NEED_WAKEUP)):
+        if unlikely(Bool(self._sq.flags() & IoUringSqFlags.NEED_WAKEUP)):
             flags |= IoUringEnterFlags.SQ_WAKEUP
             return True
 
@@ -222,7 +222,7 @@ struct IoUring[
 
     @always_inline
     fn cq_needs_flush(self) -> Bool:
-        return bool(
+        return Bool(
             self._sq.flags()
             & (IoUringSqFlags.CQ_OVERFLOW | IoUringSqFlags.TASKRUN)
         )

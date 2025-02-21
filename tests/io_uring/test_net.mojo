@@ -23,7 +23,7 @@ fn test_accept_timeout() raises:
     assert_equal(ring.submit_and_wait(wait_nr=0), 1)
 
     ts = Timespec(tv_sec=0, tv_nsec=100000000)
-    with assert_raises(contains=str(Errno.ETIME)):
+    with assert_raises(contains=String(Errno.ETIME)):
         _ = ring.cq(wait_nr=1, arg=WaitArg(ts).as_enter_arg())
 
     _ = fd^

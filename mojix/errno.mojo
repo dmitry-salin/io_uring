@@ -174,7 +174,7 @@ struct Errno(Stringable):
         Raises:
             If the given Error message cannot be parsed as an integer value.
         """
-        self = Self(negated_errno=int(str(error)))
+        self = Self(negated_errno=Int(String(error)))
 
     @always_inline("nodebug")
     fn __init__(out self, *, negated_errno: Int16):
@@ -228,7 +228,7 @@ struct Errno(Stringable):
         Returns:
             A String of the error number.
         """
-        return str(self.id)
+        return String(self.id)
 
 
 @always_inline("nodebug")
@@ -236,7 +236,7 @@ fn _check_for_errors(raw: Scalar[DType.index]) raises:
     if raw < 0:
         # Linux returns negated error numbers in the range `[-4095; 0)`.
         debug_assert(raw >= -4095, "error number out of range")
-        raise str(raw)
+        raise String(raw)
 
 
 @always_inline("nodebug")
@@ -308,4 +308,4 @@ fn unsafe_decode_none(raw: Scalar[DType.index]) raises:
     if raw != 0:
         # Linux returns negated error numbers in the range `[-4095; 0)`.
         debug_assert(raw >= -4095 and raw < 0, "error number out of range")
-        raise str(raw)
+        raise String(raw)

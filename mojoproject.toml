@@ -1,6 +1,6 @@
 [project]
 authors = ["Dmitry Salin <dmitry.salin@gmail.com>"]
-channels = ["conda-forge", "https://conda.modular.com/max-nightly"]
+channels = ["conda-forge", "https://conda.modular.com/max"]
 description = "The low-level `io_uring` userspace interface"
 name = "io_uring"
 platforms = ["linux-64"]
@@ -9,4 +9,4 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-max = "==24.6.0.dev2024111816"
+max = "==25.1"

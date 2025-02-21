@@ -132,8 +132,8 @@ struct Accept[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.ACCEPT,
             fd,
-            int(addr_unsafe_ptr),
-            int(addr_len_unsafe_ptr),
+            Int(addr_unsafe_ptr),
+            Int(addr_len_unsafe_ptr),
         )
         self.sqe = Pointer.address_of(sqe)
 
@@ -175,7 +175,7 @@ struct Connect[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.CONNECT,
             fd,
-            int(unsafe_addr.addr_unsafe_ptr()),
+            Int(unsafe_addr.addr_unsafe_ptr()),
             Addr.ADDR_LEN.cast[DType.uint64](),
         )
         self.sqe = Pointer.address_of(sqe)
@@ -259,7 +259,7 @@ struct Read[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.READ,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -323,7 +323,7 @@ struct Recv[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.RECV,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -377,7 +377,7 @@ struct Send[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.SEND,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -426,7 +426,7 @@ struct SendZc[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.SEND_ZC,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -486,7 +486,7 @@ struct Write[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.WRITE,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)

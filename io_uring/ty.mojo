@@ -30,7 +30,7 @@ struct WaitArg[
         ref [origin]sigmask: sigset_t,
     ):
         self.arg = IoUringGetEventsArg(
-            int(UnsafePointer.address_of(sigmask)), sizeof[sigset_t](), 0, 0
+            Int(UnsafePointer.address_of(sigmask)), sizeof[sigset_t](), 0, 0
         )
 
     @always_inline
@@ -41,7 +41,7 @@ struct WaitArg[
         ref [origin]timespec: Timespec,
     ):
         self.arg = IoUringGetEventsArg(
-            0, 0, 0, int(UnsafePointer.address_of(timespec))
+            0, 0, 0, Int(UnsafePointer.address_of(timespec))
         )
 
     @always_inline
@@ -51,10 +51,10 @@ struct WaitArg[
         ref [timespec_origin]timespec: Timespec,
     ):
         self.arg = IoUringGetEventsArg(
-            int(UnsafePointer.address_of(sigmask)),
+            Int(UnsafePointer.address_of(sigmask)),
             sizeof[sigset_t](),
             0,
-            int(UnsafePointer.address_of(timespec)),
+            Int(UnsafePointer.address_of(timespec)),
         )
 
     # ===-------------------------------------------------------------------===#
