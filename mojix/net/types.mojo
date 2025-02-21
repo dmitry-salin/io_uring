@@ -38,7 +38,7 @@ trait SocketAddrMut(Defaultable):
 trait SocketAddrStor:
     alias SocketAddrStor: SocketAddr
 
-    fn addr_stor(ref self) -> SocketAddrStor as out:
+    fn addr_stor(ref self, out result: SocketAddrStor):
         ...
 
 
@@ -46,7 +46,7 @@ trait SocketAddrStorMut:
     alias SocketAddrStorMut: SocketAddrMut
 
     @staticmethod
-    fn addr_stor_mut() -> SocketAddrStorMut as out:
+    fn addr_stor_mut(out result: SocketAddrStorMut):
         ...
 
 
@@ -177,13 +177,13 @@ struct SocketAddrV4(SocketAddrStor, SocketAddrStorMut):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn addr_stor(ref self) -> Self.SocketAddrStor as out:
-        out = Self.SocketAddrStor(self)
+    fn addr_stor(ref self, out result: Self.SocketAddrStor):
+        result = Self.SocketAddrStor(self)
 
     @staticmethod
     @always_inline
-    fn addr_stor_mut() -> Self.SocketAddrStorMut as out:
-        out = Self.SocketAddrStorMut()
+    fn addr_stor_mut(out result: Self.SocketAddrStorMut):
+        result = Self.SocketAddrStorMut()
 
 
 alias RawSocketType = c_uint
