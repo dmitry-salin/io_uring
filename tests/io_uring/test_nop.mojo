@@ -15,7 +15,7 @@ struct OpQueue:
         return self.size != 0
 
     @always_inline
-    fn pop(inout self):
+    fn pop(mut self):
         self.size -= 1
 
 

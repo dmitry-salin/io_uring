@@ -70,7 +70,7 @@ struct IoUring[
             self.mem.dontfork()
 
     fn __init__(
-        out self, *, sq_entries: UInt32, inout params: IoUringParams
+        out self, *, sq_entries: UInt32, mut params: IoUringParams
     ) raises:
         constrained[
             polling is not SQPOLL,
@@ -137,28 +137,28 @@ struct IoUring[
 
     @always_inline
     fn sq(
-        inout self,
+        mut self,
     ) -> SqPtr[sqe, polling, __origin_of(self._sq)]:
         self.sync_sq_head()
         return self.unsynced_sq()
 
     @always_inline
     fn unsynced_sq(
-        inout self,
+        mut self,
     ) -> SqPtr[sqe, polling, __origin_of(self._sq)]:
         return self._sq
 
     @always_inline
-    fn sync_sq_head(inout self):
+    fn sync_sq_head(mut self):
         self._sq.sync_head()
 
     @always_inline
-    fn submit_and_wait(inout self, *, wait_nr: UInt32) raises -> UInt32:
+    fn submit_and_wait(mut self, *, wait_nr: UInt32) raises -> UInt32:
         return self.submit_and_wait(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn submit_and_wait(
-        inout self, *, wait_nr: UInt32, arg: EnterArg
+        mut self, *, wait_nr: UInt32, arg: EnterArg
     ) raises -> UInt32:
         submitted = self._sq.flush()
         flags = IoUringEnterFlags()
@@ -176,7 +176,7 @@ struct IoUring[
 
     @always_inline
     fn sq_needs_enter(
-        self, submitted: UInt32, inout flags: IoUringEnterFlags
+        self, submitted: UInt32, mut flags: IoUringEnterFlags
     ) -> Bool:
         @parameter
         if polling is not SQPOLL:
@@ -197,19 +197,19 @@ struct IoUring[
 
     @always_inline
     fn cq(
-        inout self, *, wait_nr: UInt32
+        mut self, *, wait_nr: UInt32
     ) raises -> CqPtr[cqe, __origin_of(self._cq)]:
         return self.cq(wait_nr=wait_nr, arg=NO_ENTER_ARG)
 
     @always_inline
     fn cq(
-        inout self, *, wait_nr: UInt32, arg: EnterArg
+        mut self, *, wait_nr: UInt32, arg: EnterArg
     ) raises -> CqPtr[cqe, __origin_of(self._cq)]:
         self.flush_cq(wait_nr, arg)
         return self._cq
 
     @always_inline
-    fn flush_cq(inout self, wait_nr: UInt32, arg: EnterArg) raises:
+    fn flush_cq(mut self, wait_nr: UInt32, arg: EnterArg) raises:
         self._cq.sync_tail()
         if not self._cq and (wait_nr > 0 or self.cq_needs_flush()):
             _ = self.enter(

@@ -16,7 +16,7 @@ from memory import UnsafePointer
 @always_inline
 fn io_uring_setup[
     is_registered: Bool
-](sq_entries: UInt32, inout params: IoUringParams) raises -> OwnedFd[
+](sq_entries: UInt32, mut params: IoUringParams) raises -> OwnedFd[
     is_registered
 ]:
     """Sets up a context for performing asynchronous I/O.
@@ -273,7 +273,7 @@ struct Sqe[type: SQE]:
 
     @always_inline
     fn cmd(
-        inout self: Sqe[SQE128],
+        mut self: Sqe[SQE128],
     ) -> ref [self] DTypeArray[DType.uint8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
             DTypeArray[DType.uint8, 80]
@@ -337,7 +337,7 @@ struct IoUringSetupFlags(Defaultable, Boolable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
@@ -505,7 +505,7 @@ struct IoUringEnterFlags(Defaultable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
@@ -544,7 +544,7 @@ struct IoUringSqeFlags(Defaultable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:

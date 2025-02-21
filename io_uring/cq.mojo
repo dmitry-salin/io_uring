@@ -109,11 +109,11 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn sync_tail(inout self):
+    fn sync_tail(mut self):
         self.cqe_tail = self.tail()
 
     @always_inline
-    fn sync_head(inout self):
+    fn sync_head(mut self):
         _atomic_store(self._head, self.cqe_head)
 
     @always_inline

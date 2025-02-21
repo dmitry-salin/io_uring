@@ -34,7 +34,7 @@ fn _nop_data[
 @always_inline
 fn _prep_rw[
     Fd: IoUringFileDescriptor
-](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
@@ -57,7 +57,7 @@ fn _prep_rw[
 @always_inline
 fn _prep_addr[
     Fd: IoUringFileDescriptor
-](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, addr_len: UInt64):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, addr_len: UInt64):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0

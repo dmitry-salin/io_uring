@@ -32,16 +32,16 @@ struct Params(Defaultable):
     # ===-------------------------------------------------------------------===#
 
     # TODO: Use NonZeroUInt32 value type.
-    fn cq_entries(inout self, value: UInt32) -> ref [self] Self:
+    fn cq_entries(mut self, value: UInt32) -> ref [self] Self:
         self._cq_entries = value
         self.flags |= IoUringSetupFlags.CQSIZE
         return self
 
-    fn clamp(inout self) -> ref [self] Self:
+    fn clamp(mut self) -> ref [self] Self:
         self.flags |= IoUringSetupFlags.CLAMP
         return self
 
-    fn dontfork(inout self) -> ref [self] Self:
+    fn dontfork(mut self) -> ref [self] Self:
         self._dontfork = True
         return self
 

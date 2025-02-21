@@ -141,7 +141,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn sync_head(inout self):
+    fn sync_head(mut self):
         self.sqe_head = self.head[AtomicOrdering.ACQUIRE]()
 
     @always_inline
@@ -153,7 +153,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
             return self._head[]
 
     @always_inline
-    fn sync_tail(inout self):
+    fn sync_tail(mut self):
         @parameter
         if polling is SQPOLL:
             _atomic_store(self._tail, self.sqe_tail)
@@ -161,7 +161,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
             self._tail[] = self.sqe_tail
 
     @always_inline
-    fn flush(inout self) -> UInt32:
+    fn flush(mut self) -> UInt32:
         if self.sqe_head != self.sqe_tail:
             self.sqe_head = self.sqe_tail
             # Ensure that the kernel can actually see the sqe updates

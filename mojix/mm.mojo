@@ -171,7 +171,7 @@ struct MapFlags(Defaultable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
