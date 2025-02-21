@@ -276,7 +276,7 @@ struct Sqe[type: SQE]:
     @always_inline
     fn cmd(
         mut self: Sqe[SQE128],
-    ) -> ref [self] DTypeArray[DType.uint8, 80]:
+    ) -> ref [self.addr3_or_optval_or_cmd] DTypeArray[DType.uint8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
             DTypeArray[DType.uint8, 80]
         ]()[]
@@ -591,6 +591,11 @@ struct IoUringCqeFlags(Defaultable, Boolable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __and__(self, rhs: Self) -> Self:
         """Returns `self & rhs`.
 
@@ -680,10 +685,11 @@ struct IoUringFsyncFlags(Defaultable):
         self.value = 0
 
 
+@value
 @register_passable("trivial")
 struct IoUringMsgRingCmds:
-    alias DATA = Self {id: IORING_MSG_DATA}
-    alias SEND_FD = Self {id: IORING_MSG_SEND_FD}
+    alias DATA = Self(id=IORING_MSG_DATA)
+    alias SEND_FD = Self(id=IORING_MSG_SEND_FD)
 
     var id: UInt64
 

@@ -218,6 +218,11 @@ struct SocketFlags(Defaultable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: c_uint):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
