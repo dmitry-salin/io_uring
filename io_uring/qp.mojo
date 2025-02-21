@@ -50,7 +50,7 @@ struct IoUring[
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self, *, sq_entries: UInt32) raises:
-        self.__init__(sq_entries=sq_entries, params=Params())
+        self = Self(sq_entries=sq_entries, params=Params())
 
     fn __init__(out self, *, sq_entries: UInt32, params: Params) raises:
         io_uring_params = IoUringParams(
@@ -65,7 +65,7 @@ struct IoUring[
             io_sqring_offsets(),
             io_cqring_offsets(),
         )
-        self.__init__(sq_entries=sq_entries, params=io_uring_params)
+        self = Self(sq_entries=sq_entries, params=io_uring_params)
         if params.is_dontfork():
             self.mem.dontfork()
 

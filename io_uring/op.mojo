@@ -104,14 +104,14 @@ struct Accept[type: SQE, origin: MutableOrigin](Operation):
     fn __init__[
         Fd: IoUringFileDescriptor
     ](out self, ref [origin]sqe: Sqe[type], fd: Fd):
-        self.__init__(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
+        self = Self(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
         Addr: SocketAddrMut,
     ](out self, ref [origin]sqe: Sqe[type], fd: Fd, ref unsafe_addr: Addr):
-        self.__init__(
+        self = Self(
             sqe,
             fd,
             unsafe_addr.addr_unsafe_ptr(),
