@@ -2,12 +2,13 @@ from sys.intrinsics import _RegisterPackType, llvm_intrinsic
 from sys.info import bitwidthof
 from memory import UnsafePointer
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct AtomicOrdering:
-    alias ACQUIRE = Self {id: 0}
-    alias RELEASE = Self {id: 1}
-    alias RELAXED = Self {id: 2}
+    alias ACQUIRE = Self(id=0)
+    alias RELEASE = Self(id=1)
+    alias RELAXED = Self(id=2)
 
     var id: UInt8
     

@@ -209,34 +209,35 @@ struct ProtFlags(Defaultable):
         return self.value | rhs.value
 
 
+@value
 @register_passable("trivial")
 struct Advice:
     """`POSIX_MADV_*` constants for use with `madvise`."""
 
-    alias NORMAL = Self {id: MADV_NORMAL}
-    alias RANDOM = Self {id: MADV_RANDOM}
-    alias SEQUENTIAL = Self {id: MADV_SEQUENTIAL}
-    alias WILLNEED = Self {id: MADV_WILLNEED}
-    alias DONTNEED = Self {id: MADV_DONTNEED}
-    alias FREE = Self {id: MADV_FREE}
-    alias REMOVE = Self {id: MADV_REMOVE}
-    alias DONTFORK = Self {id: MADV_DONTFORK}
-    alias DOFORK = Self {id: MADV_DOFORK}
-    alias HWPOISON = Self {id: MADV_HWPOISON}
-    alias SOFT_OFFLINE = Self {id: MADV_SOFT_OFFLINE}
-    alias MERGEABLE = Self {id: MADV_MERGEABLE}
-    alias UNMERGEABLE = Self {id: MADV_UNMERGEABLE}
-    alias HUGEPAGE = Self {id: MADV_HUGEPAGE}
-    alias NOHUGEPAGE = Self {id: MADV_NOHUGEPAGE}
-    alias DONTDUMP = Self {id: MADV_DONTDUMP}
-    alias DODUMP = Self {id: MADV_DODUMP}
-    alias WIPEONFORK = Self {id: MADV_WIPEONFORK}
-    alias KEEPONFORK = Self {id: MADV_KEEPONFORK}
-    alias COLD = Self {id: MADV_COLD}
-    alias PAGEOUT = Self {id: MADV_PAGEOUT}
-    alias POPULATE_READ = Self {id: MADV_POPULATE_READ}
-    alias POPULATE_WRITE = Self {id: MADV_POPULATE_WRITE}
-    alias DONTNEED_LOCKED = Self {id: MADV_DONTNEED_LOCKED}
-    alias COLLAPSE = Self {id: MADV_COLLAPSE}
+    alias NORMAL = Self(id=MADV_NORMAL)
+    alias RANDOM = Self(id=MADV_RANDOM)
+    alias SEQUENTIAL = Self(id=MADV_SEQUENTIAL)
+    alias WILLNEED = Self(id=MADV_WILLNEED)
+    alias DONTNEED = Self(id=MADV_DONTNEED)
+    alias FREE = Self(id=MADV_FREE)
+    alias REMOVE = Self(id=MADV_REMOVE)
+    alias DONTFORK = Self(id=MADV_DONTFORK)
+    alias DOFORK = Self(id=MADV_DOFORK)
+    alias HWPOISON = Self(id=MADV_HWPOISON)
+    alias SOFT_OFFLINE = Self(id=MADV_SOFT_OFFLINE)
+    alias MERGEABLE = Self(id=MADV_MERGEABLE)
+    alias UNMERGEABLE = Self(id=MADV_UNMERGEABLE)
+    alias HUGEPAGE = Self(id=MADV_HUGEPAGE)
+    alias NOHUGEPAGE = Self(id=MADV_NOHUGEPAGE)
+    alias DONTDUMP = Self(id=MADV_DONTDUMP)
+    alias DODUMP = Self(id=MADV_DODUMP)
+    alias WIPEONFORK = Self(id=MADV_WIPEONFORK)
+    alias KEEPONFORK = Self(id=MADV_KEEPONFORK)
+    alias COLD = Self(id=MADV_COLD)
+    alias PAGEOUT = Self(id=MADV_PAGEOUT)
+    alias POPULATE_READ = Self(id=MADV_POPULATE_READ)
+    alias POPULATE_WRITE = Self(id=MADV_POPULATE_WRITE)
+    alias DONTNEED_LOCKED = Self(id=MADV_DONTNEED_LOCKED)
+    alias COLLAPSE = Self(id=MADV_COLLAPSE)
 
     var id: c_uint

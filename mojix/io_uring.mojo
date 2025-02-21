@@ -148,23 +148,24 @@ struct IoUringParams(Defaultable):
         self.cq_off = io_cqring_offsets()
 
 
-alias SQE64 = SQE {
-    id: 0,
-    size: 64,
-    align: 8,
-    array_size: 0,
-    setup_flags: IoUringSetupFlags(),
-}
+alias SQE64 = SQE (
+    id=0,
+    size=64,
+    align=8,
+    array_size=0,
+    setup_flags=IoUringSetupFlags(),
+)
 
-alias SQE128 = SQE {
-    id: 1,
-    size: 128,
-    align: 8,
-    array_size: 64,
-    setup_flags: IoUringSetupFlags.SQE128,
-}
+alias SQE128 = SQE (
+    id=1,
+    size=128,
+    align=8,
+    array_size=64,
+    setup_flags=IoUringSetupFlags.SQE128,
+)
 
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct SQE:
@@ -187,30 +188,31 @@ struct SQE:
         return self.id == rhs.id
 
 
-alias CQE16 = CQE {
-    id: 0,
-    size: 16,
-    align: 8,
-    array_size: 0,
-    rings_size: 64,
-    setup_flags: IoUringSetupFlags(),
-}
+alias CQE16 = CQE(
+    id=0,
+    size=16,
+    align=8,
+    array_size=0,
+    rings_size=64,
+    setup_flags=IoUringSetupFlags(),
+)
 
 
-alias CQE32 = CQE {
-    id: 1,
-    size: 32,
-    align: 8,
-    array_size: 2,
-    rings_size: 64 * 2,
-    setup_flags: IoUringSetupFlags.CQE32,
-}
+alias CQE32 = CQE(
+    id=1,
+    size=32,
+    align=8,
+    array_size=2,
+    rings_size=64 * 2,
+    setup_flags=IoUringSetupFlags.CQE32,
+)
 
 
 alias CQE_SIZE_DEFAULT = CQE16.size
 alias CQE_SIZE_MAX = CQE32.size
 
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct CQE:
@@ -589,57 +591,58 @@ struct IoUringCqeFlags(Defaultable, Boolable):
         return self.value != 0
 
 
+@value
 @register_passable("trivial")
 struct IoUringOp:
-    alias NOP = Self {id: IORING_OP_NOP}
-    alias READV = Self {id: IORING_OP_READV}
-    alias WRITEV = Self {id: IORING_OP_WRITEV}
-    alias FSYNC = Self {id: IORING_OP_FSYNC}
-    alias READ_FIXED = Self {id: IORING_OP_READ_FIXED}
-    alias WRITE_FIXED = Self {id: IORING_OP_WRITE_FIXED}
-    alias POLL_ADD = Self {id: IORING_OP_POLL_ADD}
-    alias POLL_REMOVE = Self {id: IORING_OP_POLL_REMOVE}
-    alias SYNC_FILE_RANGE = Self {id: IORING_OP_SYNC_FILE_RANGE}
-    alias SENDMSG = Self {id: IORING_OP_SENDMSG}
-    alias RECVMSG = Self {id: IORING_OP_RECVMSG}
-    alias TIMEOUT = Self {id: IORING_OP_TIMEOUT}
-    alias TIMEOUT_REMOVE = Self {id: IORING_OP_TIMEOUT_REMOVE}
-    alias ACCEPT = Self {id: IORING_OP_ACCEPT}
-    alias ASYNC_CANCEL = Self {id: IORING_OP_ASYNC_CANCEL}
-    alias LINK_TIMEOUT = Self {id: IORING_OP_LINK_TIMEOUT}
-    alias CONNECT = Self {id: IORING_OP_CONNECT}
-    alias FALLOCATE = Self {id: IORING_OP_FALLOCATE}
-    alias OPENAT = Self {id: IORING_OP_OPENAT}
-    alias CLOSE = Self {id: IORING_OP_CLOSE}
-    alias FILES_UPDATE = Self {id: IORING_OP_FILES_UPDATE}
-    alias STATX = Self {id: IORING_OP_STATX}
-    alias READ = Self {id: IORING_OP_READ}
-    alias WRITE = Self {id: IORING_OP_WRITE}
-    alias FADVISE = Self {id: IORING_OP_FADVISE}
-    alias MADVISE = Self {id: IORING_OP_MADVISE}
-    alias SEND = Self {id: IORING_OP_SEND}
-    alias RECV = Self {id: IORING_OP_RECV}
-    alias OPENAT2 = Self {id: IORING_OP_OPENAT2}
-    alias EPOLL_CTL = Self {id: IORING_OP_EPOLL_CTL}
-    alias SPLICE = Self {id: IORING_OP_SPLICE}
-    alias PROVIDE_BUFFERS = Self {id: IORING_OP_PROVIDE_BUFFERS}
-    alias REMOVE_BUFFERS = Self {id: IORING_OP_REMOVE_BUFFERS}
-    alias TEE = Self {id: IORING_OP_TEE}
-    alias SHUTDOWN = Self {id: IORING_OP_SHUTDOWN}
-    alias RENAMEAT = Self {id: IORING_OP_RENAMEAT}
-    alias UNLINKAT = Self {id: IORING_OP_UNLINKAT}
-    alias MKDIRAT = Self {id: IORING_OP_MKDIRAT}
-    alias SYMLINKAT = Self {id: IORING_OP_SYMLINKAT}
-    alias LINKAT = Self {id: IORING_OP_LINKAT}
-    alias MSG_RING = Self {id: IORING_OP_MSG_RING}
-    alias FSETXATTR = Self {id: IORING_OP_FSETXATTR}
-    alias SETXATTR = Self {id: IORING_OP_SETXATTR}
-    alias FGETXATTR = Self {id: IORING_OP_FGETXATTR}
-    alias GETXATTR = Self {id: IORING_OP_GETXATTR}
-    alias SOCKET = Self {id: IORING_OP_SOCKET}
-    alias URING_CMD = Self {id: IORING_OP_URING_CMD}
-    alias SEND_ZC = Self {id: IORING_OP_SEND_ZC}
-    alias SENDMSG_ZC = Self {id: IORING_OP_SENDMSG_ZC}
+    alias NOP = Self(id=IORING_OP_NOP)
+    alias READV = Self(id=IORING_OP_READV)
+    alias WRITEV = Self(id=IORING_OP_WRITEV)
+    alias FSYNC = Self(id=IORING_OP_FSYNC)
+    alias READ_FIXED = Self(id=IORING_OP_READ_FIXED)
+    alias WRITE_FIXED = Self(id=IORING_OP_WRITE_FIXED)
+    alias POLL_ADD = Self(id=IORING_OP_POLL_ADD)
+    alias POLL_REMOVE = Self(id=IORING_OP_POLL_REMOVE)
+    alias SYNC_FILE_RANGE = Self(id=IORING_OP_SYNC_FILE_RANGE)
+    alias SENDMSG = Self(id=IORING_OP_SENDMSG)
+    alias RECVMSG = Self(id=IORING_OP_RECVMSG)
+    alias TIMEOUT = Self(id=IORING_OP_TIMEOUT)
+    alias TIMEOUT_REMOVE = Self(id=IORING_OP_TIMEOUT_REMOVE)
+    alias ACCEPT = Self(id=IORING_OP_ACCEPT)
+    alias ASYNC_CANCEL = Self(id=IORING_OP_ASYNC_CANCEL)
+    alias LINK_TIMEOUT = Self(id=IORING_OP_LINK_TIMEOUT)
+    alias CONNECT = Self(id=IORING_OP_CONNECT)
+    alias FALLOCATE = Self(id=IORING_OP_FALLOCATE)
+    alias OPENAT = Self(id=IORING_OP_OPENAT)
+    alias CLOSE = Self(id=IORING_OP_CLOSE)
+    alias FILES_UPDATE = Self(id=IORING_OP_FILES_UPDATE)
+    alias STATX = Self(id=IORING_OP_STATX)
+    alias READ = Self(id=IORING_OP_READ)
+    alias WRITE = Self(id=IORING_OP_WRITE)
+    alias FADVISE = Self(id=IORING_OP_FADVISE)
+    alias MADVISE = Self(id=IORING_OP_MADVISE)
+    alias SEND = Self(id=IORING_OP_SEND)
+    alias RECV = Self(id=IORING_OP_RECV)
+    alias OPENAT2 = Self(id=IORING_OP_OPENAT2)
+    alias EPOLL_CTL = Self(id=IORING_OP_EPOLL_CTL)
+    alias SPLICE = Self(id=IORING_OP_SPLICE)
+    alias PROVIDE_BUFFERS = Self(id=IORING_OP_PROVIDE_BUFFERS)
+    alias REMOVE_BUFFERS = Self(id=IORING_OP_REMOVE_BUFFERS)
+    alias TEE = Self(id=IORING_OP_TEE)
+    alias SHUTDOWN = Self(id=IORING_OP_SHUTDOWN)
+    alias RENAMEAT = Self(id=IORING_OP_RENAMEAT)
+    alias UNLINKAT = Self(id=IORING_OP_UNLINKAT)
+    alias MKDIRAT = Self(id=IORING_OP_MKDIRAT)
+    alias SYMLINKAT = Self(id=IORING_OP_SYMLINKAT)
+    alias LINKAT = Self(id=IORING_OP_LINKAT)
+    alias MSG_RING = Self(id=IORING_OP_MSG_RING)
+    alias FSETXATTR = Self(id=IORING_OP_FSETXATTR)
+    alias SETXATTR = Self(id=IORING_OP_SETXATTR)
+    alias FGETXATTR = Self(id=IORING_OP_FGETXATTR)
+    alias GETXATTR = Self(id=IORING_OP_GETXATTR)
+    alias SOCKET = Self(id=IORING_OP_SOCKET)
+    alias URING_CMD = Self(id=IORING_OP_URING_CMD)
+    alias SEND_ZC = Self(id=IORING_OP_SEND_ZC)
+    alias SENDMSG_ZC = Self(id=IORING_OP_SENDMSG_ZC)
 
     var id: UInt8
 

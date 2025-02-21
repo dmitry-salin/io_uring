@@ -194,11 +194,11 @@ alias RawSocketType = c_uint
 struct SocketType:
     """`SOCK_*` constants for use with `socket`."""
 
-    alias STREAM = Self {id: SOCK_STREAM}
-    alias DGRAM = Self {id: SOCK_DGRAM}
-    alias SEQPACKET = Self {id: SOCK_SEQPACKET}
-    alias RAW = Self {id: SOCK_RAW}
-    alias RDM = Self {id: SOCK_RDM}
+    alias STREAM = Self(id=SOCK_STREAM)
+    alias DGRAM = Self(id=SOCK_DGRAM)
+    alias SEQPACKET = Self(id=SOCK_SEQPACKET)
+    alias RAW = Self(id=SOCK_RAW)
+    alias RDM = Self(id=SOCK_RDM)
 
     var id: RawSocketType
 
@@ -238,11 +238,11 @@ alias RawAddrFamily = __kernel_sa_family_t
 struct AddrFamily:
     """`AF_*` constants for use with `socket`."""
 
-    alias UNSPEC = Self {id: AF_UNSPEC}
-    alias INET = Self {id: AF_INET}
-    alias INET6 = Self {id: AF_INET6}
-    alias NETLINK = Self {id: AF_NETLINK}
-    alias UNIX = Self {id: AF_UNIX}
+    alias UNSPEC = Self(id=AF_UNSPEC)
+    alias INET = Self(id=AF_INET)
+    alias INET6 = Self(id=AF_INET6)
+    alias NETLINK = Self(id=AF_NETLINK)
+    alias UNIX = Self(id=AF_UNIX)
 
     var id: RawAddrFamily
 
@@ -252,37 +252,37 @@ struct AddrFamily:
 struct Protocol(Defaultable):
     """`IPPROTO_*` and other constants for use with `socket`."""
 
-    alias IP = Self {id: IPPROTO_IP}
-    alias ICMP = Self {id: IPPROTO_ICMP}
-    alias IGMP = Self {id: IPPROTO_IGMP}
-    alias IPIP = Self {id: IPPROTO_IPIP}
-    alias TCP = Self {id: IPPROTO_TCP}
-    alias EGP = Self {id: IPPROTO_EGP}
-    alias PUP = Self {id: IPPROTO_PUP}
-    alias UDP = Self {id: IPPROTO_UDP}
-    alias IDP = Self {id: IPPROTO_IDP}
-    alias TP = Self {id: IPPROTO_TP}
-    alias DCCP = Self {id: IPPROTO_DCCP}
-    alias IPV6 = Self {id: IPPROTO_IPV6}
-    alias RSVP = Self {id: IPPROTO_RSVP}
-    alias GRE = Self {id: IPPROTO_GRE}
-    alias ESP = Self {id: IPPROTO_ESP}
-    alias AH = Self {id: IPPROTO_AH}
-    alias MTP = Self {id: IPPROTO_MTP}
-    alias BEETPH = Self {id: IPPROTO_BEETPH}
-    alias ENCAP = Self {id: IPPROTO_ENCAP}
-    alias PIM = Self {id: IPPROTO_PIM}
-    alias COMP = Self {id: IPPROTO_COMP}
-    alias SCTP = Self {id: IPPROTO_SCTP}
-    alias UDPLITE = Self {id: IPPROTO_UDPLITE}
-    alias MPLS = Self {id: IPPROTO_MPLS}
-    alias ETHERNET = Self {id: IPPROTO_ETHERNET}
-    alias RAW = Self {id: IPPROTO_RAW}
-    alias MPTCP = Self {id: IPPROTO_MPTCP}
-    alias FRAGMENT = Self {id: IPPROTO_FRAGMENT}
-    alias ICMPV6 = Self {id: IPPROTO_ICMPV6}
-    alias MH = Self {id: IPPROTO_MH}
-    alias ROUTING = Self {id: IPPROTO_ROUTING}
+    alias IP = Self(id=IPPROTO_IP)
+    alias ICMP = Self(id=IPPROTO_ICMP)
+    alias IGMP = Self(id=IPPROTO_IGMP)
+    alias IPIP = Self(id=IPPROTO_IPIP)
+    alias TCP = Self(id=IPPROTO_TCP)
+    alias EGP = Self(id=IPPROTO_EGP)
+    alias PUP = Self(id=IPPROTO_PUP)
+    alias UDP = Self(id=IPPROTO_UDP)
+    alias IDP = Self(id=IPPROTO_IDP)
+    alias TP = Self(id=IPPROTO_TP)
+    alias DCCP = Self(id=IPPROTO_DCCP)
+    alias IPV6 = Self(id=IPPROTO_IPV6)
+    alias RSVP = Self(id=IPPROTO_RSVP)
+    alias GRE = Self(id=IPPROTO_GRE)
+    alias ESP = Self(id=IPPROTO_ESP)
+    alias AH = Self(id=IPPROTO_AH)
+    alias MTP = Self(id=IPPROTO_MTP)
+    alias BEETPH = Self(id=IPPROTO_BEETPH)
+    alias ENCAP = Self(id=IPPROTO_ENCAP)
+    alias PIM = Self(id=IPPROTO_PIM)
+    alias COMP = Self(id=IPPROTO_COMP)
+    alias SCTP = Self(id=IPPROTO_SCTP)
+    alias UDPLITE = Self(id=IPPROTO_UDPLITE)
+    alias MPLS = Self(id=IPPROTO_MPLS)
+    alias ETHERNET = Self(id=IPPROTO_ETHERNET)
+    alias RAW = Self(id=IPPROTO_RAW)
+    alias MPTCP = Self(id=IPPROTO_MPTCP)
+    alias FRAGMENT = Self(id=IPPROTO_FRAGMENT)
+    alias ICMPV6 = Self(id=IPPROTO_ICMPV6)
+    alias MH = Self(id=IPPROTO_MH)
+    alias ROUTING = Self(id=IPPROTO_ROUTING)
 
     var id: c_uint
 
