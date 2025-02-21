@@ -2,7 +2,6 @@ from .mm import Region
 from .utils import AtomicOrdering, _atomic_load, _atomic_store
 from mojix.io_uring import Cqe, CQE, CQE16, CQE32, IoUringParams
 from mojix.utils import _size_eq, _align_eq
-from builtin.builtin_list import _lit_mut_cast
 from memory import UnsafePointer
 
 
@@ -148,7 +147,7 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     @always_inline
     fn __next__[
         origin: MutableOrigin
-    ](ref [origin]self) -> ref [_lit_mut_cast[origin, False].result] Cqe[type]:
+    ](ref [origin]self) -> ref [ImmutableOrigin.cast_from[origin].result] Cqe[type]:
         ptr = self.cq[].cqes.offset(
             Int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
