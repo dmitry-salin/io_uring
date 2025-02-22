@@ -15,17 +15,15 @@ For Mojo LSP to work correctly in editors like [`Helix`](https://github.com/heli
 some environment variables need to be set/modified. You can use [`direnv`](https://direnv.net/)
 or look at the `.envrc` file for values.
 
+## Build
+```
+./scripts/build.sh
+```
 
 ## Tests
 ```
-magic run mojo test -D ASSERT=all -I .
+./scripts/run_tests.sh
 ```
-
-Some tests do not work with the test framework and require a separate file:
-```
-magic run mojo -D ASSERT=all -I . run_tests.mojo
-```
-
 
 ## Requirements
 Currently only x86_64 platform is supported. Mojo nightly builds are required.
