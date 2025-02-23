@@ -1,24 +1,30 @@
+import sys
 from buffer import Buffer
+from collections import InlineArray
 from memory import UnsafePointer
 
 from mojix.errno import Errno
 from mojix.fd import Fd, OwnedFd, UnsafeFd
-from mojix.io_uring import SQE64
+from mojix.io_uring import SQE64, IoUringSqeFlags
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4, SocketFlags
 from mojix.timespec import Timespec
 from io_uring import IoUring, WaitArg
-from io_uring.op import Accept, Read, Write, Nop
+from io_uring.op import Accept, PrepProvideBuffers, Read, Write, Nop
 
-alias MAX_CONNECTIONS = 4096
+alias BYTE = Int8
+alias MAX_CONNECTIONS = 8  # 1024
 alias BACKLOG = 512 
 alias MAX_MESSAGE_LEN = 2048
 alias BUFFERS_COUNT = MAX_CONNECTIONS
+alias BUFFERS_SIZE = BUFFERS_COUNT * MAX_MESSAGE_LEN
 
 alias ACCEPT = 0
 alias READ = 1
 alias WRITE = 2
 alias PROV_BUF = 3
+
+alias BufferType = Buffer[DType.int8, MAX_MESSAGE_LEN]
 
 @value
 struct ConnInfo:
@@ -45,15 +51,40 @@ struct ConnInfo:
         )
 
 
+struct Buffers[
+    T: CollectionElement = BYTE,
+    # C: Int = BUFFERS_COUNT,
+    # L: Int = MAX_MESSAGE_LEN,
+]:
+    # var _data: InlineArray[T, C * L]
+    var _data: InlineArray[T, BUFFERS_SIZE]
+
+    fn __init__(out self, fill: T):
+        # self._data = InlineArray[T, C * L](fill=fill)
+        self._data = InlineArray[T, BUFFERS_SIZE](fill=fill)
+
+    fn __getitem__(self, index: UInt32) -> T:
+        return self._data[index]
+
+    fn unsafe_ptr(self, index: Int = 0) -> UnsafePointer[BYTE]:
+        initial_ptr = self._data.unsafe_ptr().bitcast[BYTE]()
+        return initial_ptr + index * MAX_MESSAGE_LEN
+
+
 fn main() raises:
+    args = sys.argv()
+    port = Int(args[1]) if len(args) > 1 else 8080
     # Initialize io_uring instance
     ring = IoUring[](sq_entries=16)
+
+    var buffers = Buffers(fill=0)
+    var buffers_ptr = buffers.unsafe_ptr()
     
     var buffer_ptr = UnsafePointer[Scalar[DType.int8]].alloc(MAX_MESSAGE_LEN)
     var buffer = Buffer[DType.int8, MAX_MESSAGE_LEN](buffer_ptr)
 
     # Setup listener socket
-    port = 8081
+    gid = 0
     listener_fd = socket(AddrFamily.INET, SocketType.STREAM)
     bind(listener_fd, SocketAddrV4(0, 0, 0, 0, port=port))
     listen(listener_fd, backlog=BACKLOG)
@@ -61,6 +92,19 @@ fn main() raises:
 
     # Add initial accept
     var sq = ring.sq()
+    if sq:
+        # Prep Provide buffers
+        _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffers_ptr, MAX_MESSAGE_LEN, BUFFERS_COUNT, gid)
+
+    # Submit and wait for buffer registration
+    submitted = ring.submit_and_wait(wait_nr=1)
+    for cqe in ring.cq(wait_nr=0):
+        res = cqe.res
+        if res < 0:
+            print("Buffer registration failed:", cqe.res)
+
+    # Add the initial accept
+    sq = ring.sq()
     if sq:
         conn = ConnInfo(fd=Int32(listener_fd.unsafe_fd()), type=ACCEPT)
         _ = Accept(sq.__next__(), listener_fd).user_data(conn.to_int())
@@ -83,13 +127,13 @@ fn main() raises:
             if conn.type == ACCEPT:
                 if res >= 0:
                     client_fd = Fd(unsafe_fd=res)
-                    print("New connection:", client_fd.unsafe_fd())
+                    print("New connection: fd=", client_fd.unsafe_fd(), "bid=", conn.bid)
 
                     # Add read for new connection
                     sq = ring.sq()
                     if sq:
                         read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ)
-                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int())
+                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
                 # Re-add accept
                 sq = ring.sq()
@@ -103,15 +147,20 @@ fn main() raises:
                 if res <= 0:
                     print("Connection closed:", conn.fd) 
                 else:
+                    bid = Int(cqe.flags.value >> 16)
+                    bytes_read = Int(res)
+                    print("Buffer ID:", bid)
+                    print("Bytes read:", bytes_read)
                     # Echo data back
                     sq = ring.sq()
                     if sq:
                         write_conn = ConnInfo(fd=conn.fd, type=WRITE)
-                        _ = Write[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=write_conn.fd), buffer_ptr, len(buffer)).user_data(write_conn.to_int())
+                        buff_read = buffers.unsafe_ptr(bid)
+                        _ = Write[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=write_conn.fd), buff_read, bytes_read).user_data(write_conn.to_int())
 
                     # Add new read
                     sq = ring.sq()
                     if sq:
                         read_conn = ConnInfo(fd=conn.fd, type=READ)
-                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int())
+                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
