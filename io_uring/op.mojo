@@ -34,12 +34,12 @@ fn _nop_data[
 @always_inline
 fn _prep_rw[
     Fd: IoUringFileDescriptor
-](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32, offset: UInt64 = 0):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
     sqe.fd = fd.unsafe_fd()
-    sqe.off_or_addr2_or_cmd_op = 0
+    sqe.off_or_addr2_or_cmd_op = offset
     sqe.addr_or_splice_off_in_or_msgring_cmd = addr
     sqe.len_or_poll_flags = len
     sqe.op_flags = 0
@@ -520,4 +520,69 @@ struct Write[type: SQE, origin: MutableOrigin](Operation):
     fn rw_flags(owned self, flags: ReadWriteFlags) -> Self:
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
+        return self^
+
+
+@register_passable
+struct PrepProvideBuffers[type: SQE, origin: MutableOrigin](Operation):
+    """Prepare buffers, equivalent to `io_uring_prep_provide_buffers(3)`."""
+
+    alias SINCE = 5.6
+
+    var sqe: Pointer[Sqe[type], origin]
+
+    @always_inline
+    fn __init__(
+        out self,
+        ref [origin]sqe: Sqe[type],
+        unsafe_ptr: UnsafePointer[c_void],
+        len: UInt,
+        nr: UInt,
+        gid: UInt,
+        bid: UInt = 0,
+    ):
+        _prep_rw(
+            sqe,
+            IoUringOp.PROVIDE_BUFFERS,
+            Fd(unsafe_fd=nr),
+            Int(unsafe_ptr),
+            len,
+            bid,
+        )
+        self.sqe = Pointer.address_of(sqe)
+
+    @always_inline("nodebug")
+    fn user_data(owned self, value: UInt64) -> Self:
+        self.sqe[].user_data = value
+        return self^
+
+    @always_inline("nodebug")
+    fn personality(owned self, value: UInt16) -> Self:
+        self.sqe[].personality = value
+        return self^
+
+    @always_inline("nodebug")
+    fn sqe_flags(owned self, flags: IoUringSqeFlags) -> Self:
+        self.sqe[].flags |= flags
+        return self^
+
+    @always_inline("nodebug")
+    fn ioprio(owned self, value: UInt16) -> Self:
+        self.sqe[].ioprio = value
+        return self^
+
+    @always_inline("nodebug")
+    fn offset(owned self, value: UInt64) -> Self:
+        self.sqe[].off_or_addr2_or_cmd_op = value
+        return self^
+
+    @always_inline("nodebug")
+    fn rw_flags(owned self, flags: ReadWriteFlags) -> Self:
+        _size_eq[__type_of(flags), UInt32]()
+        self.sqe[].op_flags = flags.value
+        return self^
+
+    @always_inline("nodebug")
+    fn buf_group(owned self, value: UInt16) -> Self:
+        self.sqe[].buf_index_or_buf_group = value
         return self^
