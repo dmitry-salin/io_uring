@@ -13,7 +13,9 @@ from io_uring import IoUring, WaitArg
 from io_uring.op import Accept, PrepProvideBuffers, Read, Write, Nop
 
 alias BYTE = Int8
-alias MAX_CONNECTIONS = 8  # 1024
+# Do not increase this until we update the Mojo compiler to improve metaprogramming
+# See https://github.com/modular/mojo/commit/248de11a021f24ceb9037634b0601deb39cfc142
+alias MAX_CONNECTIONS = 8 # 1024  
 alias BACKLOG = 512 
 alias MAX_MESSAGE_LEN = 2048
 alias BUFFERS_COUNT = MAX_CONNECTIONS
@@ -53,22 +55,20 @@ struct ConnInfo:
 
 struct Buffers[
     T: CollectionElement = BYTE,
-    # C: Int = BUFFERS_COUNT,
-    # L: Int = MAX_MESSAGE_LEN,
+    C: Int = BUFFERS_COUNT,
+    L: Int = MAX_MESSAGE_LEN,
 ]:
-    # var _data: InlineArray[T, C * L]
-    var _data: InlineArray[T, BUFFERS_SIZE]
+    var _data: InlineArray[T, C * L]
 
     fn __init__(out self, fill: T):
-        # self._data = InlineArray[T, C * L](fill=fill)
-        self._data = InlineArray[T, BUFFERS_SIZE](fill=fill)
+        self._data = InlineArray[T, C * L](fill=fill)
 
     fn __getitem__(self, index: UInt32) -> T:
         return self._data[index]
 
     fn unsafe_ptr(self, index: Int = 0) -> UnsafePointer[BYTE]:
         initial_ptr = self._data.unsafe_ptr().bitcast[BYTE]()
-        return initial_ptr + index * MAX_MESSAGE_LEN
+        return initial_ptr + index * L
 
 
 fn main() raises:
@@ -154,7 +154,7 @@ fn main() raises:
                     # Echo data back
                     sq = ring.sq()
                     if sq:
-                        write_conn = ConnInfo(fd=conn.fd, type=WRITE)
+                        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=bid)
                         buff_read = buffers.unsafe_ptr(bid)
                         _ = Write[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=write_conn.fd), buff_read, bytes_read).user_data(write_conn.to_int())
 
@@ -163,4 +163,14 @@ fn main() raises:
                     if sq:
                         read_conn = ConnInfo(fd=conn.fd, type=READ)
                         _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+
+            # Handle write completion
+            elif conn.type == WRITE:
+                print("Write completion in bid:", conn.bid)
+                # TODO: Not working yet. Find out why
+            #    # Re-add the buffer
+            #    buffer_to_add = buffers.unsafe_ptr(Int(conn.bid))
+            #    _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid)
+            #    # Add a new read for the connection
+            #    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
