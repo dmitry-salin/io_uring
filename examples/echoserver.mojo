@@ -125,12 +125,12 @@ fn main() raises:
             # Handle accept completion
             if conn.type == ACCEPT:
                 client_fd = Fd(unsafe_fd=res)
-                print("New connection: fd=", client_fd.unsafe_fd(), "bid=", conn.bid)
+                print("New connection: fd=", client_fd.unsafe_fd(), "bid=", bid)
 
                 # Add read for new connection
                 sq = ring.sq()
                 if sq:
-                    read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=conn.bid)
+                    read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=bid)
                     _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffers.unsafe_ptr(bid), MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
                 # Re-add accept
