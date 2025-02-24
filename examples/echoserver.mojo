@@ -80,9 +80,6 @@ fn main() raises:
     var buffers = Buffers(fill=0)
     var buffers_ptr = buffers.unsafe_ptr()
     
-    var buffer_ptr = UnsafePointer[Scalar[DType.int8]].alloc(MAX_MESSAGE_LEN)
-    var buffer = Buffer[DType.int8, MAX_MESSAGE_LEN](buffer_ptr)
-
     # Setup listener socket
     gid = 0
     listener_fd = socket(AddrFamily.INET, SocketType.STREAM)
@@ -123,6 +120,7 @@ fn main() raises:
                 continue
 
             conn = ConnInfo.from_int(user_data)
+            bid = Int(conn.bid)
 
             # Handle accept completion
             if conn.type == ACCEPT:
@@ -133,7 +131,7 @@ fn main() raises:
                 sq = ring.sq()
                 if sq:
                     read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=conn.bid)
-                    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffers.unsafe_ptr(bid), MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
                 # Re-add accept
                 sq = ring.sq()
@@ -162,11 +160,11 @@ fn main() raises:
 
             # Handle write completion
             elif conn.type == WRITE:
-                print("Write completion in bid:", conn.bid)
+                print("Write completion in bid:", bid)
                 # TODO: Not working yet. Find out why
                 # Re-add the buffer
-                buffer_to_add = buffers.unsafe_ptr(Int(conn.bid))
+                buffer_to_add = buffers.unsafe_ptr(bid)
                 _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid)
                 # Add a new read for the connection
-                _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffers.unsafe_ptr(bid), MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
