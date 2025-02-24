@@ -15,7 +15,7 @@ from io_uring.op import Accept, PrepProvideBuffers, Read, Write, Nop
 alias BYTE = Int8
 # Do not increase this until we update the Mojo compiler to improve metaprogramming
 # See https://github.com/modular/mojo/commit/248de11a021f24ceb9037634b0601deb39cfc142
-alias MAX_CONNECTIONS = 8 # 1024  
+alias MAX_CONNECTIONS = 4  # 1024  
 alias BACKLOG = 512 
 alias MAX_MESSAGE_LEN = 2048
 alias BUFFERS_COUNT = MAX_CONNECTIONS
@@ -121,19 +121,19 @@ fn main() raises:
             if res < 0:
                 print("Error:", res)
                 continue
+
             conn = ConnInfo.from_int(user_data)
 
             # Handle accept completion
             if conn.type == ACCEPT:
-                if res >= 0:
-                    client_fd = Fd(unsafe_fd=res)
-                    print("New connection: fd=", client_fd.unsafe_fd(), "bid=", conn.bid)
+                client_fd = Fd(unsafe_fd=res)
+                print("New connection: fd=", client_fd.unsafe_fd(), "bid=", conn.bid)
 
-                    # Add read for new connection
-                    sq = ring.sq()
-                    if sq:
-                        read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ)
-                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                # Add read for new connection
+                sq = ring.sq()
+                if sq:
+                    read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=conn.bid)
+                    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), client_fd, buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
                 # Re-add accept
                 sq = ring.sq()
@@ -157,20 +157,16 @@ fn main() raises:
                         write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=bid)
                         buff_read = buffers.unsafe_ptr(bid)
                         _ = Write[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=write_conn.fd), buff_read, bytes_read).user_data(write_conn.to_int())
-
-                    # Add new read
-                    sq = ring.sq()
-                    if sq:
-                        read_conn = ConnInfo(fd=conn.fd, type=READ)
-                        _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                    else:
+                        print("No sq available for write")
 
             # Handle write completion
             elif conn.type == WRITE:
                 print("Write completion in bid:", conn.bid)
                 # TODO: Not working yet. Find out why
-            #    # Re-add the buffer
-            #    buffer_to_add = buffers.unsafe_ptr(Int(conn.bid))
-            #    _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid)
-            #    # Add a new read for the connection
-            #    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                # Re-add the buffer
+                buffer_to_add = buffers.unsafe_ptr(Int(conn.bid))
+                _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid)
+                # Add a new read for the connection
+                _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffer_ptr, MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
 
