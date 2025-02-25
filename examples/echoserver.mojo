@@ -161,10 +161,17 @@ fn main() raises:
             # Handle write completion
             elif conn.type == WRITE:
                 print("Write completion in bid:", bid)
-                # TODO: Not working yet. Find out why
-                # Re-add the buffer
-                buffer_to_add = buffers.unsafe_ptr(bid)
-                _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid)
-                # Add a new read for the connection
-                _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffers.unsafe_ptr(bid), MAX_MESSAGE_LEN).user_data(conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                # Get a new submission queue entry
+                sq = ring.sq()
+                if sq:
+                    # Re-add the buffer
+                    buffer_to_add = buffers.unsafe_ptr(bid)
+                    prov_conn = ConnInfo(fd=0, type=PROV_BUF)
+                    _ = PrepProvideBuffers[type=SQE64, origin=__origin_of(sq)](sq.__next__(), buffer_to_add, MAX_MESSAGE_LEN, 1, gid).user_data(prov_conn.to_int())
+
+                    # Add a new read for the connection
+                    read_conn = ConnInfo(fd=conn.fd, type=READ)
+                    _ = Read[type=SQE64, origin=__origin_of(sq)](sq.__next__(), Fd(unsafe_fd=conn.fd), buffers.unsafe_ptr(), MAX_MESSAGE_LEN).user_data(read_conn.to_int()).sqe_flags(IoUringSqeFlags.BUFFER_SELECT)
+                else:
+                    print("No sq available for write completion")
 
