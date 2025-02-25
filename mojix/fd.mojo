@@ -170,7 +170,6 @@ struct IoUringFd[is_registered: Bool](FileDescriptor, IoUringFileDescriptor):
         return self
 
 
-@value
 @register_passable
 struct OwnedFd[is_registered: Bool = False](FileDescriptor, IoUringFileDescriptor):
     """An owned file descriptor that is automatically closed/unregistered
