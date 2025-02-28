@@ -126,6 +126,10 @@ fn main() raises:
     while True:
         # Submit and wait for at least 1 completion
         submitted = ring.submit_and_wait(wait_nr=1)
+
+        if submitted < 0:
+            print("Error no submitted")
+            break
         
         # Process completions
         for cqe in ring.cq(wait_nr=0):
