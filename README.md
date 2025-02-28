@@ -26,7 +26,7 @@ or look at the `.envrc` file for values.
 ```
 
 ## Requirements
-Currently only x86_64 platform is supported. Mojo nightly builds are required.
+Currently only x86_64 platform is supported.
 
 
 ## License
