@@ -155,8 +155,8 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         if sqes_size <= page_size:
             sqes_size = page_size
         else:
-            sqes_size = HUGE_PAGE_SIZE
-            flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
+            # Use regular pages instead of huge pages
+            sqes_size = (sqes_size + page_size - 1) & ~(page_size - 1)  # Round up to page size
 
         self.sqes_mem = Region(
             len=sqes_size.cast[DType.index]().value, flags=flags
@@ -166,8 +166,8 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         if sq_cq_size <= page_size:
             sq_cq_size = page_size
         else:
-            sq_cq_size = HUGE_PAGE_SIZE
-            flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
+            # Use regular pages instead of huge pages
+            sqes_size = (sqes_size + page_size - 1) & ~(page_size - 1)  # Round up to page size
 
         self.sq_cq_mem = Region(
             len=sq_cq_size.cast[DType.index]().value, flags=flags
