@@ -11,10 +11,12 @@ from io_uring.op import Accept, Read, Write
 
 alias BYTE = Int8
 alias MAX_CONNECTIONS = 16
-alias BACKLOG = 512 
+alias BACKLOG = 512
 alias MAX_MESSAGE_LEN = 2048
 alias BUFFERS_COUNT = 8  # Must be power of 2
 alias BUF_RING_SIZE = BUFFERS_COUNT
+# Number of entries in the submission queue
+alias SQ_ENTRIES = 128
 
 alias ACCEPT = 0
 alias READ = 1
@@ -98,7 +100,7 @@ fn main() raises:
     port = Int(args[1]) if len(args) > 1 else 8080
     
     # Initialize io_uring instance with 128 entries
-    ring = IoUring[](sq_entries=128)
+    ring = IoUring[](sq_entries=SQ_ENTRIES)
 
     # We'll use separate buffer provider instead of io_uring buffer ring
     # as the buffer ring implementation might have issues
