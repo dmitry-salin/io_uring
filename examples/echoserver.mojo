@@ -102,8 +102,8 @@ fn main() raises:
     # Initialize io_uring instance with 128 entries
     ring = IoUring[](sq_entries=SQ_ENTRIES)
 
-    # We'll use separate buffer provider instead of io_uring buffer ring
-    # as the buffer ring implementation might have issues
+    # We'll use separate buffer provider
+    # TODO: Use ring mapped buffers when available
     var buffer_memory = BufferMemory()
     
     # Setup listener socket
