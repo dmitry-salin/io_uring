@@ -147,7 +147,7 @@ fn main() raises:
                 # New connection
                 client_fd = Fd(unsafe_fd=res)
                 active_connections += 1
-                print("New connection: fd=", client_fd.unsafe_fd(), " (active: ", active_connections, ")")
+                print("New connection (active:", active_connections, ")")
                 
                 # Add read for the new connection (using direct buffers)
                 sq = ring.sq()
@@ -175,13 +175,13 @@ fn main() raises:
                 if res <= 0:
                     # Connection closed or error
                     active_connections -= 1
-                    print("Connection closed: fd=", conn.fd, " (active: ", active_connections, ")")
+                    print("Connection closed (active:", active_connections, ")")
                 else:
                     # Get buffer info from the user data
                     buffer_idx = Int(conn.bid)
                     
                     bytes_read = Int(res)
-                    print("Read completion: fd=", conn.fd, " bytes=", bytes_read, " buffer_idx=", buffer_idx)
+                    print("Read completion (bytes:", bytes_read, ", buffer_idx:", buffer_idx, ")")
                     
                     # Get the buffer pointer (already provided in connection info)
                     buff_ptr = buffer_memory.get_buffer_pointer(buffer_idx)
@@ -199,14 +199,14 @@ fn main() raises:
             
             # Handle write completion
             elif conn.type == WRITE:
-                print("Write completion: fd=", conn.fd)
+                print("Write completion (buffer_idx:", conn.bid, ")")
                 
                 # Extract buffer index from connection info
                 buffer_idx = Int(conn.bid)
                 
                 # Mark the buffer as available again
                 buffer_memory.mark_buffer_available(buffer_idx)
-                print("Marked buffer available: idx=", buffer_idx)
+                print("Marked buffer available (idx:", buffer_idx, ")")
                 
                 # Post a new read for the connection (using direct buffer)
                 sq = ring.sq()
