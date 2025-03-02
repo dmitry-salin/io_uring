@@ -194,13 +194,17 @@ alias RawSocketType = c_uint
 struct SocketType:
     """`SOCK_*` constants for use with `socket`."""
 
-    alias STREAM = Self(id=SOCK_STREAM)
-    alias DGRAM = Self(id=SOCK_DGRAM)
-    alias SEQPACKET = Self(id=SOCK_SEQPACKET)
-    alias RAW = Self(id=SOCK_RAW)
-    alias RDM = Self(id=SOCK_RDM)
+    alias STREAM = Self(unsafe_id=SOCK_STREAM)
+    alias DGRAM = Self(unsafe_id=SOCK_DGRAM)
+    alias SEQPACKET = Self(unsafe_id=SOCK_SEQPACKET)
+    alias RAW = Self(unsafe_id=SOCK_RAW)
+    alias RDM = Self(unsafe_id=SOCK_RDM)
 
     var id: RawSocketType
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: RawSocketType):
+        self.id = unsafe_id
 
 
 @value
@@ -243,13 +247,17 @@ alias RawAddrFamily = __kernel_sa_family_t
 struct AddrFamily:
     """`AF_*` constants for use with `socket`."""
 
-    alias UNSPEC = Self(id=AF_UNSPEC)
-    alias INET = Self(id=AF_INET)
-    alias INET6 = Self(id=AF_INET6)
-    alias NETLINK = Self(id=AF_NETLINK)
-    alias UNIX = Self(id=AF_UNIX)
+    alias UNSPEC = Self(unsafe_id=AF_UNSPEC)
+    alias INET = Self(unsafe_id=AF_INET)
+    alias INET6 = Self(unsafe_id=AF_INET6)
+    alias NETLINK = Self(unsafe_id=AF_NETLINK)
+    alias UNIX = Self(unsafe_id=AF_UNIX)
 
     var id: RawAddrFamily
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: RawAddrFamily):
+        self.id = unsafe_id
 
 
 @value

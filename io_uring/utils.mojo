@@ -6,11 +6,15 @@ from memory import UnsafePointer
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct AtomicOrdering:
-    alias ACQUIRE = Self(id=0)
-    alias RELEASE = Self(id=1)
-    alias RELAXED = Self(id=2)
+    alias ACQUIRE = Self(unsafe_id=0)
+    alias RELEASE = Self(unsafe_id=1)
+    alias RELAXED = Self(unsafe_id=2)
 
     var id: UInt8
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: UInt8):
+        self.id = unsafe_id
     
     @always_inline("nodebug")
     fn __is__(self, rhs: Self) -> Bool:
