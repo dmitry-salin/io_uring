@@ -70,6 +70,7 @@ alias IORING_FEAT_CQE_SKIP = 2048
 alias IORING_FEAT_LINKED_FILE = 4096
 alias IORING_FEAT_REG_REG_RING = 8192
 
+alias IORING_CQE_BUFFER_SHIFT = 16
 alias IORING_REGISTER_BUFFERS = 0
 alias IORING_UNREGISTER_BUFFERS = 1
 alias IORING_REGISTER_FILES = 2
@@ -210,3 +211,18 @@ struct io_cqring_offsets(Defaultable):
         self.flags = 0
         self.resv1 = 0
         self.user_addr = 0
+
+
+@value
+struct io_uring_buf(Defaultable):
+    var addr: UInt64
+    var len: UInt32
+    var bid: UInt16
+    var resv: UInt16
+
+    @always_inline
+    fn __init__(out self):
+        self.addr = 0
+        self.len = 0
+        self.bid = 0
+        self.resv = 0

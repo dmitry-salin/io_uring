@@ -1,3 +1,4 @@
+from .buf import BufRing
 from .cq import Cq, CqPtr
 from .sq import Sq, SqPtr
 from .modes import PollingMode, NOPOLL, IOPOLL, SQPOLL
@@ -92,14 +93,12 @@ struct IoUring[
             sq_cq_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQ_RING,
-                len=UInt(max(sq_len, cq_len).cast[DType.index]().value),
+                len=max(sq_len, cq_len).cast[DType.index]().value,
             )
             sqes_mem = Region(
                 fd=fd,
                 offset=IORING_OFF_SQES,
-                len=UInt(
-                    (params.sq_entries * sqe.size).cast[DType.index]().value
-                ),
+                len=(params.sq_entries * sqe.size).cast[DType.index]().value,
             )
             self.fd = fd^
             self.mem = MemoryMapping[sqe, cqe](
@@ -255,3 +254,18 @@ struct IoUring[
             flags=flags,
             arg=arg,
         )
+
+    @always_inline
+    fn create_buf_ring(
+        self,
+        *,
+        bgid: UInt16,
+        entries: UInt16,
+        entry_size: UInt32,
+        out ring: BufRing,
+    ) raises:
+        ring = BufRing(self, bgid=bgid, entries=entries, entry_size=entry_size)
+
+    @always_inline
+    fn unsafe_delete_buf_ring(self, owned buf_ring: BufRing) raises:
+        buf_ring^.unsafe_unregister(self)

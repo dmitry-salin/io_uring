@@ -1,7 +1,7 @@
 from .ctypes import c_void
 from .fd import UnsafeFd, IoUringFileDescriptor, OwnedFd
 from .errno import unsafe_decode_result
-from .utils import _aligned_u64, StaticMutableOrigin
+from .utils import _aligned_u64, _align_eq, _size_eq, StaticMutableOrigin
 from linux_raw.x86_64.io_uring import *
 from linux_raw.x86_64.general import (
     __NR_io_uring_setup,
@@ -51,7 +51,7 @@ fn io_uring_setup[
 @always_inline
 fn io_uring_register[
     Fd: IoUringFileDescriptor
-](fd: Fd, arg: RegisterArg,) raises -> UInt32:
+](fd: Fd, arg: RegisterArg) raises -> UInt32:
     """Registers/unregisters files or user buffers for asynchronous I/O.
     [Linux]: https://www.man7.org/linux/man-pages/man2/io_uring_register.2.html.
 
@@ -659,6 +659,18 @@ struct IoUringCqeFlags(Defaultable, Boolable):
         """
         return self.value != 0
 
+    @always_inline("nodebug")
+    fn __rshift__(self, rhs: IntLiteral) -> Self:
+        """Returns `self >> rhs`.
+
+        Args:
+            rhs: The RHS value.
+
+        Returns:
+            `self >> rhs`.
+        """
+        return self.value >> rhs
+
 
 @value
 @register_passable("trivial")
@@ -800,6 +812,42 @@ struct IoUringAcceptFlags(Defaultable):
         self.value = 0
 
 
+@register_passable("trivial")
+struct EnterArg[size: UInt, flags: IoUringEnterFlags, origin: ImmutableOrigin]:
+    """
+    Parameters:
+        size: The size of the enter argument.
+        flags: The bitmask of the `IoUringEnterFlags` values.
+        lifetime: The lifetime of the enter argument.
+    """
+
+    var arg_unsafe_ptr: UnsafePointer[c_void]
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, arg_unsafe_ptr: UnsafePointer[c_void]):
+        self.arg_unsafe_ptr = arg_unsafe_ptr
+
+
+alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), StaticConstantOrigin](
+    arg_unsafe_ptr=UnsafePointer[c_void]()
+)
+
+
+@value
+struct IoUringGetEventsArg(Defaultable):
+    var sigmask: UInt64
+    var sigmask_sz: UInt32
+    var pad: UInt32
+    var ts: UInt64
+
+    @always_inline
+    fn __init__(out self):
+        self.sigmask = 0
+        self.sigmask_sz = 0
+        self.pad = 0
+        self.ts = 0
+
+
 trait AsRegisterArg:
     fn as_register_arg[
         origin: MutableOrigin
@@ -866,37 +914,50 @@ struct IoUringRsrcUpdate(AsRegisterArg, Defaultable):
         )
 
 
-@register_passable("trivial")
-struct EnterArg[size: UInt, flags: IoUringEnterFlags, origin: ImmutableOrigin]:
-    """
-    Parameters:
-        size: The size of the enter argument.
-        flags: The bitmask of the `IoUringEnterFlags` values.
-        lifetime: The lifetime of the enter argument.
-    """
-
-    var arg_unsafe_ptr: UnsafePointer[c_void]
-
-    @always_inline("nodebug")
-    fn __init__(out self, *, arg_unsafe_ptr: UnsafePointer[c_void]):
-        self.arg_unsafe_ptr = arg_unsafe_ptr
-
-
-alias NO_ENTER_ARG = EnterArg[0, IoUringEnterFlags(), StaticConstantOrigin](
-    arg_unsafe_ptr=UnsafePointer[c_void]()
-)
-
-
 @value
-struct IoUringGetEventsArg(Defaultable):
-    var sigmask: UInt64
-    var sigmask_sz: UInt32
-    var pad: UInt32
-    var ts: UInt64
+struct IoUringBufReg(AsRegisterArg, Defaultable):
+    var ring_addr: UInt64
+    var ring_entries: UInt32
+    var bgid: UInt16
+    var pad: UInt16
+    var resv: DTypeArray[DType.uint64, 3]
 
     @always_inline
     fn __init__(out self):
-        self.sigmask = 0
-        self.sigmask_sz = 0
+        self.ring_addr = 0
+        self.ring_entries = 0
+        self.bgid = 0
         self.pad = 0
-        self.ts = 0
+        self.resv = DTypeArray[DType.uint64, 3]()
+
+    @always_inline
+    fn __init__(out self, *, bgid: UInt16):
+        self.ring_addr = 0
+        self.ring_entries = 0
+        self.bgid = bgid
+        self.pad = 0
+        self.resv = DTypeArray[DType.uint64, 3]()
+
+    @always_inline
+    fn __init__(
+        out self, *, ring_addr: UInt64, ring_entries: UInt32, bgid: UInt16
+    ):
+        self.ring_addr = ring_addr
+        self.ring_entries = ring_entries
+        self.bgid = bgid
+        self.pad = 0
+        self.resv = DTypeArray[DType.uint64, 3]()
+
+    @always_inline
+    fn as_register_arg[
+        origin: MutableOrigin
+    ](ref [origin]self, *, unsafe_opcode: IoUringRegisterOp) -> RegisterArg[
+        origin
+    ]:
+        _size_eq[Self, 40]()
+        _align_eq[Self, 8]()
+        return RegisterArg[origin](
+            opcode=unsafe_opcode,
+            arg_unsafe_ptr=UnsafePointer.address_of(self).bitcast[c_void](),
+            nr_args=1,
+        )

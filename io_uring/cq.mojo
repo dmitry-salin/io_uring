@@ -112,7 +112,7 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
         self.cqe_tail = self.tail()
 
     @always_inline
-    fn sync_head(mut self):
+    fn sync_head(self):
         _atomic_store(self._head, self.cqe_head)
 
     @always_inline
@@ -128,8 +128,8 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline
     @implicit
+    @always_inline
     fn __init__(out self, ref [cq_origin]cq: Cq[type]):
         self.cq = Pointer.address_of(cq)
 
@@ -151,9 +151,7 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     ](ref [origin]self) -> ref [ImmutableOrigin.cast_from[origin].result] Cqe[
         type
     ]:
-        ptr = self.cq[].cqes.offset(
-            Int(self.cq[].cqe_head & self.cq[].ring_mask)
-        )
+        ptr = self.cq[].cqes.offset(self.cq[].cqe_head & self.cq[].ring_mask)
         self.cq[].cqe_head += 1
         return ptr[]
 

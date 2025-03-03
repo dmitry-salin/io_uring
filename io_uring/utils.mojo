@@ -1,4 +1,4 @@
-from sys.intrinsics import _RegisterPackType, llvm_intrinsic
+from sys.intrinsics import _RegisterPackType, llvm_intrinsic, unlikely
 from sys.info import bitwidthof
 from memory import UnsafePointer
 
@@ -31,10 +31,10 @@ struct AtomicOrdering:
 
 @always_inline("nodebug")
 fn _atomic_load[
-    ordering: AtomicOrdering
-](unsafe_ptr: UnsafePointer[UInt32]) -> UInt32:
+    type: DType, //, ordering: AtomicOrdering
+](unsafe_ptr: UnsafePointer[Scalar[type]]) -> Scalar[type]:
     addr = unsafe_ptr.bitcast[
-        __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`]
+        __mlir_type[`!pop.scalar<`, type.value, `>`]
     ]().address
 
     # TODO: use atomic load when it becomes available.
@@ -43,19 +43,19 @@ fn _atomic_load[
         return __mlir_op.`pop.atomic.rmw`[
             bin_op = __mlir_attr.`#pop<bin_op add>`,
             ordering = __mlir_attr.`#pop<atomic_ordering acquire>`,
-            _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
+            _type = __mlir_type[`!pop.scalar<`, type.value, `>`],
         ](
             addr,
-            UInt32(0).value,
+            Scalar[type](0).value,
         )
     elif ordering is AtomicOrdering.RELAXED:
         return __mlir_op.`pop.atomic.rmw`[
             bin_op = __mlir_attr.`#pop<bin_op add>`,
             ordering = __mlir_attr.`#pop<atomic_ordering monotonic>`,
-            _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
+            _type = __mlir_type[`!pop.scalar<`, type.value, `>`],
         ](
             addr,
-            UInt32(0).value,
+            Scalar[type](0).value,
         )
     else:
         constrained[False, "unsupported atomic ordering"]()
@@ -63,15 +63,15 @@ fn _atomic_load[
 
 
 @always_inline("nodebug")
-fn _atomic_store(unsafe_ptr: UnsafePointer[UInt32], rhs: UInt32):
+fn _atomic_store[type: DType](unsafe_ptr: UnsafePointer[Scalar[type]], rhs: Scalar[type]):
     # TODO: use atomic store when it becomes available.
     _ = __mlir_op.`pop.atomic.rmw`[
         bin_op = __mlir_attr.`#pop<bin_op xchg>`,
         ordering = __mlir_attr.`#pop<atomic_ordering release>`,
-        _type = __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`],
+        _type = __mlir_type[`!pop.scalar<`, type.value, `>`],
     ](
         unsafe_ptr.bitcast[
-            __mlir_type[`!pop.scalar<`, DType.uint32.value, `>`]
+            __mlir_type[`!pop.scalar<`, type.value, `>`]
         ]().address,
         rhs.value,
     )
@@ -124,9 +124,11 @@ fn _one_less_than_next_power_of_two(value: UInt32) -> UInt32:
 @always_inline("nodebug")
 fn _add_with_overflow(lhs: UInt32, rhs: UInt32) -> (UInt32, Bool):
     """Computes `lhs + rhs` and a `Bool` indicating overflow.
+
     Args:
         lhs: The lhs value.
         rhs: The rhs value.
+
     Returns:
         A tuple with the results of the operation and a `Bool` indicating
         overflow.
@@ -136,3 +138,22 @@ fn _add_with_overflow(lhs: UInt32, rhs: UInt32) -> (UInt32, Bool):
         _RegisterPackType[UInt32, Bool],
     ](lhs, rhs)
     return (res[0], res[1])
+
+@always_inline("nodebug")
+fn _checked_add(lhs: UInt32, rhs: UInt32) raises -> UInt32:
+    """Computes `lhs + rhs`.
+
+    Args:
+        lhs: The lhs value.
+        rhs: The rhs value.
+
+    Returns:
+        `lhs + rhs` value.
+
+    Raises:
+        If an overflow occurs.
+    """
+    res = _add_with_overflow(lhs, rhs)
+    if unlikely(res[1]):
+        raise "integer overflow"
+    return res[0]

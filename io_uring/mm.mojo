@@ -1,6 +1,6 @@
 from .cq import Cq
 from .params import Entries
-from .utils import _add_with_overflow
+from .utils import _checked_add
 from mojix.ctypes import c_void
 from mojix.io_uring import (
     Sqe,
@@ -49,12 +49,16 @@ struct Region(Movable):
         self.len = len
 
     @always_inline
-    fn __init__(out self, *, len: UInt, flags: MapFlags) raises:
+    fn __init__[
+        is_shared: Bool = True
+    ](out self, *, len: UInt, flags: MapFlags) raises:
         self.ptr = mmap_anonymous(
             unsafe_ptr=UnsafePointer[c_void](),
             len=len,
             prot=ProtFlags.READ | ProtFlags.WRITE,
-            flags=MapFlags.SHARED | MapFlags.POPULATE | flags,
+            flags=MapFlags.SHARED if is_shared else MapFlags.PRIVATE
+            | MapFlags.POPULATE
+            | flags,
         )
         debug_assert(self.ptr, "null pointer")
         self.len = len
@@ -77,6 +81,15 @@ struct Region(Movable):
         self.len = existing.len
 
     # ===-------------------------------------------------------------------===#
+    # Factory methods
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline
+    @staticmethod
+    fn private(out self: Self, *, len: UInt, flags: MapFlags) raises:
+        self = Self.__init__[is_shared=False](len=len, flags=flags)
+
+    # ===-------------------------------------------------------------------===#
     # Methods
     # ===-------------------------------------------------------------------===#
 
@@ -91,15 +104,16 @@ struct Region(Movable):
         constrained[alignof[T]() > 0]()
         constrained[sizeof[c_void]() == 1]()
 
-        len = _add_with_overflow(offset, count * sizeof[T]())
-        if len[1]:
-            raise "len overflow"
-        if len[0] > self.len:
+        if _checked_add(offset, count * sizeof[T]()) > self.len:
             raise "offset is out of bounds"
-        ptr = self.ptr.offset(Int(offset))
+        ptr = self.ptr.offset(offset)
         if Int(ptr) & (alignof[T]() - 1):
             raise "region is not properly aligned"
         return ptr.bitcast[T]()
+
+    @always_inline
+    fn unsafe_ptr(self) -> UnsafePointer[c_void]:
+        return self.ptr
 
     @always_inline
     fn addr(self) -> UInt64:
@@ -145,7 +159,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
             flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
 
         self.sqes_mem = Region(
-            len=UInt(sqes_size.cast[DType.index]().value), flags=flags
+            len=sqes_size.cast[DType.index]().value, flags=flags
         )
 
         flags = MapFlags()
@@ -156,7 +170,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
             flags |= MapFlags.HUGETLB | MapFlags.HUGE_2MB
 
         self.sq_cq_mem = Region(
-            len=UInt(sq_cq_size.cast[DType.index]().value), flags=flags
+            len=sq_cq_size.cast[DType.index]().value, flags=flags
         )
 
         params.cq_off.user_addr = self.sq_cq_mem.addr()

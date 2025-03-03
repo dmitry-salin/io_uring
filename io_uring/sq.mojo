@@ -82,7 +82,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
                 offset=params.sq_off.array, count=self.ring_entries
             )
             # Directly map `sq` slots to `sqes`.
-            for i in range(Int(self.ring_entries)):
+            for i in range(self.ring_entries):
                 self.array[i] = i
 
         self.sqes = sqes_mem.unsafe_ptr[Sqe[type]](
@@ -191,8 +191,8 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
     # Life cycle methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline
     @implicit
+    @always_inline
     fn __init__(out self, ref [sq_origin]sq: Sq[type, polling]):
         self.sq = Pointer.address_of(sq)
 
@@ -208,9 +208,7 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
     fn __next__[
         origin: MutableOrigin
     ](ref [origin]self) -> ref [origin] Sqe[type]:
-        ptr = self.sq[].sqes.offset(
-            Int(self.sq[].sqe_tail & self.sq[].ring_mask)
-        )
+        ptr = self.sq[].sqes.offset(self.sq[].sqe_tail & self.sq[].ring_mask)
         self.sq[].sqe_tail += 1
         return _nop_data(ptr[])
 
