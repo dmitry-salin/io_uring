@@ -20,7 +20,7 @@ fn socket(
     """Creates a socket.
     [Linux]: https://man7.org/linux/man-pages/man2/socket.2.html.
     """
-    return _socket(domain, type, SocketFlags(), Protocol())
+    return _socket(domain, type, SocketFlags(), Protocol.IP)
 
 
 @always_inline

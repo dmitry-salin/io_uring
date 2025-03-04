@@ -262,47 +262,46 @@ struct AddrFamily:
 
 @value
 @register_passable("trivial")
-struct Protocol(Defaultable):
+struct Protocol:
     """`IPPROTO_*` and other constants for use with `socket`."""
 
-    alias IP = Self(id=IPPROTO_IP)
-    alias ICMP = Self(id=IPPROTO_ICMP)
-    alias IGMP = Self(id=IPPROTO_IGMP)
-    alias IPIP = Self(id=IPPROTO_IPIP)
-    alias TCP = Self(id=IPPROTO_TCP)
-    alias EGP = Self(id=IPPROTO_EGP)
-    alias PUP = Self(id=IPPROTO_PUP)
-    alias UDP = Self(id=IPPROTO_UDP)
-    alias IDP = Self(id=IPPROTO_IDP)
-    alias TP = Self(id=IPPROTO_TP)
-    alias DCCP = Self(id=IPPROTO_DCCP)
-    alias IPV6 = Self(id=IPPROTO_IPV6)
-    alias RSVP = Self(id=IPPROTO_RSVP)
-    alias GRE = Self(id=IPPROTO_GRE)
-    alias ESP = Self(id=IPPROTO_ESP)
-    alias AH = Self(id=IPPROTO_AH)
-    alias MTP = Self(id=IPPROTO_MTP)
-    alias BEETPH = Self(id=IPPROTO_BEETPH)
-    alias ENCAP = Self(id=IPPROTO_ENCAP)
-    alias PIM = Self(id=IPPROTO_PIM)
-    alias COMP = Self(id=IPPROTO_COMP)
-    alias SCTP = Self(id=IPPROTO_SCTP)
-    alias UDPLITE = Self(id=IPPROTO_UDPLITE)
-    alias MPLS = Self(id=IPPROTO_MPLS)
-    alias ETHERNET = Self(id=IPPROTO_ETHERNET)
-    alias RAW = Self(id=IPPROTO_RAW)
-    alias MPTCP = Self(id=IPPROTO_MPTCP)
-    alias FRAGMENT = Self(id=IPPROTO_FRAGMENT)
-    alias ICMPV6 = Self(id=IPPROTO_ICMPV6)
-    alias MH = Self(id=IPPROTO_MH)
-    alias ROUTING = Self(id=IPPROTO_ROUTING)
+    alias IP = Self(unsafe_id=IPPROTO_IP)
+    alias ICMP = Self(unsafe_id=IPPROTO_ICMP)
+    alias IGMP = Self(unsafe_id=IPPROTO_IGMP)
+    alias IPIP = Self(unsafe_id=IPPROTO_IPIP)
+    alias TCP = Self(unsafe_id=IPPROTO_TCP)
+    alias EGP = Self(unsafe_id=IPPROTO_EGP)
+    alias PUP = Self(unsafe_id=IPPROTO_PUP)
+    alias UDP = Self(unsafe_id=IPPROTO_UDP)
+    alias IDP = Self(unsafe_id=IPPROTO_IDP)
+    alias TP = Self(unsafe_id=IPPROTO_TP)
+    alias DCCP = Self(unsafe_id=IPPROTO_DCCP)
+    alias IPV6 = Self(unsafe_id=IPPROTO_IPV6)
+    alias RSVP = Self(unsafe_id=IPPROTO_RSVP)
+    alias GRE = Self(unsafe_id=IPPROTO_GRE)
+    alias ESP = Self(unsafe_id=IPPROTO_ESP)
+    alias AH = Self(unsafe_id=IPPROTO_AH)
+    alias MTP = Self(unsafe_id=IPPROTO_MTP)
+    alias BEETPH = Self(unsafe_id=IPPROTO_BEETPH)
+    alias ENCAP = Self(unsafe_id=IPPROTO_ENCAP)
+    alias PIM = Self(unsafe_id=IPPROTO_PIM)
+    alias COMP = Self(unsafe_id=IPPROTO_COMP)
+    alias SCTP = Self(unsafe_id=IPPROTO_SCTP)
+    alias UDPLITE = Self(unsafe_id=IPPROTO_UDPLITE)
+    alias MPLS = Self(unsafe_id=IPPROTO_MPLS)
+    alias ETHERNET = Self(unsafe_id=IPPROTO_ETHERNET)
+    alias RAW = Self(unsafe_id=IPPROTO_RAW)
+    alias MPTCP = Self(unsafe_id=IPPROTO_MPTCP)
+    alias FRAGMENT = Self(unsafe_id=IPPROTO_FRAGMENT)
+    alias ICMPV6 = Self(unsafe_id=IPPROTO_ICMPV6)
+    alias MH = Self(unsafe_id=IPPROTO_MH)
+    alias ROUTING = Self(unsafe_id=IPPROTO_ROUTING)
 
     var id: c_uint
 
     @always_inline("nodebug")
-    fn __init__(out self):
-        constrained[Self.IP.id == 0]()
-        self.id = 0
+    fn __init__(out self, *, unsafe_id: c_uint):
+        self.id = unsafe_id
 
 
 @value
