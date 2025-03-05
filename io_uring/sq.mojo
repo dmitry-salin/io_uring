@@ -82,7 +82,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
                 offset=params.sq_off.array, count=self.ring_entries
             )
             # Directly map `sq` slots to `sqes`.
-            for i in range(int(self.ring_entries)):
+            for i in range(Int(self.ring_entries)):
                 self.array[i] = i
 
         self.sqes = sqes_mem.unsafe_ptr[Sqe[type]](
@@ -141,7 +141,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn sync_head(inout self):
+    fn sync_head(mut self):
         self.sqe_head = self.head[AtomicOrdering.ACQUIRE]()
 
     @always_inline
@@ -153,7 +153,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
             return self._head[]
 
     @always_inline
-    fn sync_tail(inout self):
+    fn sync_tail(mut self):
         @parameter
         if polling is SQPOLL:
             _atomic_store(self._tail, self.sqe_tail)
@@ -161,7 +161,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
             self._tail[] = self.sqe_tail
 
     @always_inline
-    fn flush(inout self) -> UInt32:
+    fn flush(mut self) -> UInt32:
         if self.sqe_head != self.sqe_tail:
             self.sqe_head = self.sqe_tail
             # Ensure that the kernel can actually see the sqe updates
@@ -192,6 +192,7 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    @implicit
     fn __init__(out self, ref [sq_origin]sq: Sq[type, polling]):
         self.sq = Pointer.address_of(sq)
 
@@ -208,7 +209,7 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
         origin: MutableOrigin
     ](ref [origin]self) -> ref [origin] Sqe[type]:
         ptr = self.sq[].sqes.offset(
-            int(self.sq[].sqe_tail & self.sq[].ring_mask)
+            Int(self.sq[].sqe_tail & self.sq[].ring_mask)
         )
         self.sq[].sqe_tail += 1
         return _nop_data(ptr[])
@@ -238,4 +239,4 @@ struct SqPtr[type: SQE, polling: PollingMode, sq_origin: MutableOrigin](
             `False` if the sq is full, `True` if there is at least one available
             entry.
         """
-        return bool(self.sq[])
+        return Bool(self.sq[])

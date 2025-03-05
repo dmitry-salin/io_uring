@@ -34,12 +34,12 @@ fn _nop_data[
 @always_inline
 fn _prep_rw[
     Fd: IoUringFileDescriptor
-](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32, offset: UInt64 = 0):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
     sqe.fd = fd.unsafe_fd()
-    sqe.off_or_addr2_or_cmd_op = 0
+    sqe.off_or_addr2_or_cmd_op = offset
     sqe.addr_or_splice_off_in_or_msgring_cmd = addr
     sqe.len_or_poll_flags = len
     sqe.op_flags = 0
@@ -57,7 +57,7 @@ fn _prep_rw[
 @always_inline
 fn _prep_addr[
     Fd: IoUringFileDescriptor
-](inout sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, addr_len: UInt64):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, addr_len: UInt64):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
@@ -104,14 +104,14 @@ struct Accept[type: SQE, origin: MutableOrigin](Operation):
     fn __init__[
         Fd: IoUringFileDescriptor
     ](out self, ref [origin]sqe: Sqe[type], fd: Fd):
-        self.__init__(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
+        self = Self(sqe, fd, UnsafePointer[c_void](), UnsafePointer[c_void]())
 
     @always_inline
     fn __init__[
         Fd: IoUringFileDescriptor,
         Addr: SocketAddrMut,
     ](out self, ref [origin]sqe: Sqe[type], fd: Fd, ref unsafe_addr: Addr):
-        self.__init__(
+        self = Self(
             sqe,
             fd,
             unsafe_addr.addr_unsafe_ptr(),
@@ -132,8 +132,8 @@ struct Accept[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.ACCEPT,
             fd,
-            int(addr_unsafe_ptr),
-            int(addr_len_unsafe_ptr),
+            Int(addr_unsafe_ptr),
+            Int(addr_len_unsafe_ptr),
         )
         self.sqe = Pointer.address_of(sqe)
 
@@ -175,7 +175,7 @@ struct Connect[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.CONNECT,
             fd,
-            int(unsafe_addr.addr_unsafe_ptr()),
+            Int(unsafe_addr.addr_unsafe_ptr()),
             Addr.ADDR_LEN.cast[DType.uint64](),
         )
         self.sqe = Pointer.address_of(sqe)
@@ -259,7 +259,7 @@ struct Read[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.READ,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -323,7 +323,7 @@ struct Recv[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.RECV,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -377,7 +377,7 @@ struct Send[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.SEND,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -426,7 +426,7 @@ struct SendZc[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.SEND_ZC,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -486,7 +486,7 @@ struct Write[type: SQE, origin: MutableOrigin](Operation):
             sqe,
             IoUringOp.WRITE,
             fd,
-            int(unsafe_ptr),
+            Int(unsafe_ptr),
             len,
         )
         self.sqe = Pointer.address_of(sqe)
@@ -521,3 +521,4 @@ struct Write[type: SQE, origin: MutableOrigin](Operation):
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
         return self^
+

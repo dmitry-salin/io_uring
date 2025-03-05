@@ -2,7 +2,6 @@ from .mm import Region
 from .utils import AtomicOrdering, _atomic_load, _atomic_store
 from mojix.io_uring import Cqe, CQE, CQE16, CQE32, IoUringParams
 from mojix.utils import _size_eq, _align_eq
-from builtin.builtin_list import _lit_mut_cast
 from memory import UnsafePointer
 
 
@@ -109,11 +108,11 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn sync_tail(inout self):
+    fn sync_tail(mut self):
         self.cqe_tail = self.tail()
 
     @always_inline
-    fn sync_head(inout self):
+    fn sync_head(mut self):
         _atomic_store(self._head, self.cqe_head)
 
     @always_inline
@@ -130,6 +129,7 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    @implicit
     fn __init__(out self, ref [cq_origin]cq: Cq[type]):
         self.cq = Pointer.address_of(cq)
 
@@ -148,9 +148,9 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     @always_inline
     fn __next__[
         origin: MutableOrigin
-    ](ref [origin]self) -> ref [_lit_mut_cast[origin, False].result] Cqe[type]:
+    ](ref [origin]self) -> ref [ImmutableOrigin.cast_from[origin].result] Cqe[type]:
         ptr = self.cq[].cqes.offset(
-            int(self.cq[].cqe_head & self.cq[].ring_mask)
+            Int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
         self.cq[].cqe_head += 1
         return ptr[]
@@ -179,4 +179,4 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
         Returns:
             `False` if the cq is empty, `True` if there is at least one entry.
         """
-        return bool(self.cq[])
+        return Bool(self.cq[])

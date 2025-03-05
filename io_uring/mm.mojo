@@ -96,14 +96,14 @@ struct Region(Movable):
             raise "len overflow"
         if len[0] > self.len:
             raise "offset is out of bounds"
-        ptr = self.ptr.offset(int(offset))
-        if int(ptr) & (alignof[T]() - 1):
+        ptr = self.ptr.offset(Int(offset))
+        if Int(ptr) & (alignof[T]() - 1):
             raise "region is not properly aligned"
         return ptr.bitcast[T]()
 
     @always_inline
     fn addr(self) -> UInt64:
-        return int(self.ptr)
+        return Int(self.ptr)
 
 
 struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
@@ -120,7 +120,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         self.sq_cq_mem = sq_cq_mem^
 
     fn __init__(
-        out self, sq_entries: UInt32, inout params: IoUringParams
+        out self, sq_entries: UInt32, mut params: IoUringParams
     ) raises:
         entries = Entries(sq_entries=sq_entries, params=params)
         # FIXME: Get the actual page size value at runtime.
@@ -137,7 +137,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
 
         alias HUGE_PAGE_SIZE = 1 << 21
         if sqes_size > HUGE_PAGE_SIZE or sq_cq_size > HUGE_PAGE_SIZE:
-            raise str(Errno.ENOMEM)
+            raise String(Errno.ENOMEM)
 
         flags = MapFlags()
         if sqes_size <= page_size:

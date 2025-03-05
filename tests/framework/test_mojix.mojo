@@ -72,7 +72,7 @@ fn _test_io_uring_setup[*, use_sq_array: Bool]() raises:
 fn test_io_uring_register_enable_rings_error() raises:
     params = IoUringParams()
     fd = io_uring_setup[is_registered=False](16, params)
-    with assert_raises(contains=str(Errno.EBADFD)):
+    with assert_raises(contains=String(Errno.EBADFD)):
         _ = io_uring_register(fd, NoRegisterArg.ENABLE_RINGS)
 
 

@@ -32,16 +32,16 @@ struct Params(Defaultable):
     # ===-------------------------------------------------------------------===#
 
     # TODO: Use NonZeroUInt32 value type.
-    fn cq_entries(inout self, value: UInt32) -> ref [self] Self:
+    fn cq_entries(mut self, value: UInt32) -> ref [self] Self:
         self._cq_entries = value
         self.flags |= IoUringSetupFlags.CQSIZE
         return self
 
-    fn clamp(inout self) -> ref [self] Self:
+    fn clamp(mut self) -> ref [self] Self:
         self.flags |= IoUringSetupFlags.CLAMP
         return self
 
-    fn dontfork(inout self) -> ref [self] Self:
+    fn dontfork(mut self) -> ref [self] Self:
         self._dontfork = True
         return self
 
@@ -60,23 +60,23 @@ struct Entries:
 
     fn __init__(out self, *, sq_entries: UInt32, params: IoUringParams) raises:
         if sq_entries == 0:
-            raise str(Errno.EINVAL)
+            raise String(Errno.EINVAL)
 
         self.sq_entries = _next_power_of_two(sq_entries)
         if self.sq_entries > SQ_ENTRIES_MAX:
             if not params.flags & IoUringSetupFlags.CLAMP:
-                raise str(Errno.EINVAL)
+                raise String(Errno.EINVAL)
             self.sq_entries = SQ_ENTRIES_MAX
 
         if params.flags & IoUringSetupFlags.CQSIZE:
             if params.cq_entries == 0:
-                raise str(Errno.EINVAL)
+                raise String(Errno.EINVAL)
             self.cq_entries = _next_power_of_two(params.cq_entries)
             if self.cq_entries > CQ_ENTRIES_MAX:
                 if not params.flags & IoUringSetupFlags.CLAMP:
-                    raise str(Errno.EINVAL)
+                    raise String(Errno.EINVAL)
                 self.cq_entries = CQ_ENTRIES_MAX
             if self.cq_entries < self.sq_entries:
-                raise str(Errno.EINVAL)
+                raise String(Errno.EINVAL)
         else:
             self.cq_entries = self.sq_entries * 2

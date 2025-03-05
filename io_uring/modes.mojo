@@ -1,11 +1,12 @@
 from mojix.io_uring import IoUringSetupFlags
 
 
-alias NOPOLL = PollingMode {id: 0, setup_flags: IoUringSetupFlags()}
-alias IOPOLL = PollingMode {id: 1, setup_flags: IoUringSetupFlags.IOPOLL}
-alias SQPOLL = PollingMode {id: 2, setup_flags: IoUringSetupFlags.SQPOLL}
+alias NOPOLL = PollingMode(id=0, setup_flags=IoUringSetupFlags())
+alias IOPOLL = PollingMode(id=1, setup_flags=IoUringSetupFlags.IOPOLL)
+alias SQPOLL = PollingMode(id=2, setup_flags=IoUringSetupFlags.SQPOLL)
 
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct PollingMode(Identifiable):

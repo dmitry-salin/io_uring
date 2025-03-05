@@ -15,7 +15,7 @@ struct OpQueue:
         return self.size != 0
 
     @always_inline
-    fn pop(inout self):
+    fn pop(mut self):
         self.size -= 1
 
 
@@ -55,5 +55,5 @@ fn test_nop_skip_cqe() raises:
     ts = Timespec(tv_sec=0, tv_nsec=100000000)
     # We expect a timeout and 0 cqes because none of the submitted sqes were
     # configured to perform any operation.
-    with assert_raises(contains=str(Errno.ETIME)):
+    with assert_raises(contains=String(Errno.ETIME)):
         _ = ring.cq(wait_nr=1, arg=WaitArg(ts).as_enter_arg())

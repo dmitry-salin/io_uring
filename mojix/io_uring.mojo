@@ -16,7 +16,7 @@ from memory import UnsafePointer
 @always_inline
 fn io_uring_setup[
     is_registered: Bool
-](sq_entries: UInt32, inout params: IoUringParams) raises -> OwnedFd[
+](sq_entries: UInt32, mut params: IoUringParams) raises -> OwnedFd[
     is_registered
 ]:
     """Sets up a context for performing asynchronous I/O.
@@ -148,23 +148,24 @@ struct IoUringParams(Defaultable):
         self.cq_off = io_cqring_offsets()
 
 
-alias SQE64 = SQE {
-    id: 0,
-    size: 64,
-    align: 8,
-    array_size: 0,
-    setup_flags: IoUringSetupFlags(),
-}
+alias SQE64 = SQE (
+    id=0,
+    size=64,
+    align=8,
+    array_size=0,
+    setup_flags=IoUringSetupFlags(),
+)
 
-alias SQE128 = SQE {
-    id: 1,
-    size: 128,
-    align: 8,
-    array_size: 64,
-    setup_flags: IoUringSetupFlags.SQE128,
-}
+alias SQE128 = SQE (
+    id=1,
+    size=128,
+    align=8,
+    array_size=64,
+    setup_flags=IoUringSetupFlags.SQE128,
+)
 
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct SQE:
@@ -187,30 +188,31 @@ struct SQE:
         return self.id == rhs.id
 
 
-alias CQE16 = CQE {
-    id: 0,
-    size: 16,
-    align: 8,
-    array_size: 0,
-    rings_size: 64,
-    setup_flags: IoUringSetupFlags(),
-}
+alias CQE16 = CQE(
+    id=0,
+    size=16,
+    align=8,
+    array_size=0,
+    rings_size=64,
+    setup_flags=IoUringSetupFlags(),
+)
 
 
-alias CQE32 = CQE {
-    id: 1,
-    size: 32,
-    align: 8,
-    array_size: 2,
-    rings_size: 64 * 2,
-    setup_flags: IoUringSetupFlags.CQE32,
-}
+alias CQE32 = CQE(
+    id=1,
+    size=32,
+    align=8,
+    array_size=2,
+    rings_size=64 * 2,
+    setup_flags=IoUringSetupFlags.CQE32,
+)
 
 
 alias CQE_SIZE_DEFAULT = CQE16.size
 alias CQE_SIZE_MAX = CQE32.size
 
 
+@value
 @nonmaterializable(NoneType)
 @register_passable("trivial")
 struct CQE:
@@ -273,8 +275,8 @@ struct Sqe[type: SQE]:
 
     @always_inline
     fn cmd(
-        inout self: Sqe[SQE128],
-    ) -> ref [self] DTypeArray[DType.uint8, 80]:
+        mut self: Sqe[SQE128],
+    ) -> ref [self.addr3_or_optval_or_cmd] DTypeArray[DType.uint8, 80]:
         return UnsafePointer.address_of(self.addr3_or_optval_or_cmd).bitcast[
             DTypeArray[DType.uint8, 80]
         ]()[]
@@ -325,6 +327,11 @@ struct IoUringSetupFlags(Defaultable, Boolable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
@@ -337,7 +344,7 @@ struct IoUringSetupFlags(Defaultable, Boolable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
@@ -392,6 +399,11 @@ struct IoUringFeatureFlags(Defaultable, Boolable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __and__(self, rhs: Self) -> Self:
         """Returns `self & rhs`.
 
@@ -413,40 +425,45 @@ struct IoUringFeatureFlags(Defaultable, Boolable):
         return self.value != 0
 
 
+@value
 @register_passable("trivial")
 struct IoUringRegisterOp:
-    alias REGISTER_BUFFERS = Self {id: IORING_REGISTER_BUFFERS}
-    alias UNREGISTER_BUFFERS = Self {id: IORING_UNREGISTER_BUFFERS}
-    alias REGISTER_FILES = Self {id: IORING_REGISTER_FILES}
-    alias UNREGISTER_FILES = Self {id: IORING_UNREGISTER_FILES}
-    alias REGISTER_EVENTFD = Self {id: IORING_REGISTER_EVENTFD}
-    alias UNREGISTER_EVENTFD = Self {id: IORING_UNREGISTER_EVENTFD}
-    alias REGISTER_FILES_UPDATE = Self {id: IORING_REGISTER_FILES_UPDATE}
-    alias REGISTER_EVENTFD_ASYNC = Self {id: IORING_REGISTER_EVENTFD_ASYNC}
-    alias REGISTER_PROBE = Self {id: IORING_REGISTER_PROBE}
-    alias REGISTER_PERSONALITY = Self {id: IORING_REGISTER_PERSONALITY}
-    alias UNREGISTER_PERSONALITY = Self {id: IORING_UNREGISTER_PERSONALITY}
-    alias REGISTER_RESTRICTIONS = Self {id: IORING_REGISTER_RESTRICTIONS}
-    alias REGISTER_ENABLE_RINGS = Self {id: IORING_REGISTER_ENABLE_RINGS}
-    alias REGISTER_FILES2 = Self {id: IORING_REGISTER_FILES2}
-    alias REGISTER_FILES_UPDATE2 = Self {id: IORING_REGISTER_FILES_UPDATE2}
-    alias REGISTER_BUFFERS2 = Self {id: IORING_REGISTER_BUFFERS2}
-    alias REGISTER_BUFFERS_UPDATE = Self {id: IORING_REGISTER_BUFFERS_UPDATE}
-    alias REGISTER_IOWQ_AFF = Self {id: IORING_REGISTER_IOWQ_AFF}
-    alias UNREGISTER_IOWQ_AFF = Self {id: IORING_UNREGISTER_IOWQ_AFF}
-    alias REGISTER_IOWQ_MAX_WORKERS = Self {
-        id: IORING_REGISTER_IOWQ_MAX_WORKERS
-    }
-    alias REGISTER_RING_FDS = Self {id: IORING_REGISTER_RING_FDS}
-    alias UNREGISTER_RING_FDS = Self {id: IORING_UNREGISTER_RING_FDS}
-    alias REGISTER_PBUF_RING = Self {id: IORING_REGISTER_PBUF_RING}
-    alias UNREGISTER_PBUF_RING = Self {id: IORING_UNREGISTER_PBUF_RING}
-    alias REGISTER_SYNC_CANCEL = Self {id: IORING_REGISTER_SYNC_CANCEL}
-    alias REGISTER_FILE_ALLOC_RANGE = Self {
-        id: IORING_REGISTER_FILE_ALLOC_RANGE
-    }
+    alias REGISTER_BUFFERS = Self(unsafe_id=IORING_REGISTER_BUFFERS)
+    alias UNREGISTER_BUFFERS = Self(unsafe_id=IORING_UNREGISTER_BUFFERS)
+    alias REGISTER_FILES = Self(unsafe_id=IORING_REGISTER_FILES)
+    alias UNREGISTER_FILES = Self(unsafe_id=IORING_UNREGISTER_FILES)
+    alias REGISTER_EVENTFD = Self(unsafe_id=IORING_REGISTER_EVENTFD)
+    alias UNREGISTER_EVENTFD = Self(unsafe_id=IORING_UNREGISTER_EVENTFD)
+    alias REGISTER_FILES_UPDATE = Self(unsafe_id=IORING_REGISTER_FILES_UPDATE)
+    alias REGISTER_EVENTFD_ASYNC = Self(unsafe_id=IORING_REGISTER_EVENTFD_ASYNC)
+    alias REGISTER_PROBE = Self(unsafe_id=IORING_REGISTER_PROBE)
+    alias REGISTER_PERSONALITY = Self(unsafe_id=IORING_REGISTER_PERSONALITY)
+    alias UNREGISTER_PERSONALITY = Self(unsafe_id=IORING_UNREGISTER_PERSONALITY)
+    alias REGISTER_RESTRICTIONS = Self(unsafe_id=IORING_REGISTER_RESTRICTIONS)
+    alias REGISTER_ENABLE_RINGS = Self(unsafe_id=IORING_REGISTER_ENABLE_RINGS)
+    alias REGISTER_FILES2 = Self(unsafe_id=IORING_REGISTER_FILES2)
+    alias REGISTER_FILES_UPDATE2 = Self(unsafe_id=IORING_REGISTER_FILES_UPDATE2)
+    alias REGISTER_BUFFERS2 = Self(unsafe_id=IORING_REGISTER_BUFFERS2)
+    alias REGISTER_BUFFERS_UPDATE = Self(unsafe_id=IORING_REGISTER_BUFFERS_UPDATE)
+    alias REGISTER_IOWQ_AFF = Self(unsafe_id=IORING_REGISTER_IOWQ_AFF)
+    alias UNREGISTER_IOWQ_AFF = Self(unsafe_id=IORING_UNREGISTER_IOWQ_AFF)
+    alias REGISTER_IOWQ_MAX_WORKERS = Self(
+        unsafe_id=IORING_REGISTER_IOWQ_MAX_WORKERS
+    )
+    alias REGISTER_RING_FDS = Self(unsafe_id=IORING_REGISTER_RING_FDS)
+    alias UNREGISTER_RING_FDS = Self(unsafe_id=IORING_UNREGISTER_RING_FDS)
+    alias REGISTER_PBUF_RING = Self(unsafe_id=IORING_REGISTER_PBUF_RING)
+    alias UNREGISTER_PBUF_RING = Self(unsafe_id=IORING_UNREGISTER_PBUF_RING)
+    alias REGISTER_SYNC_CANCEL = Self(unsafe_id=IORING_REGISTER_SYNC_CANCEL)
+    alias REGISTER_FILE_ALLOC_RANGE = Self(
+        unsafe_id=IORING_REGISTER_FILE_ALLOC_RANGE
+    )
 
     var id: UInt32
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: UInt32):
+        self.id = unsafe_id
 
 
 @value
@@ -493,6 +510,11 @@ struct IoUringEnterFlags(Defaultable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
@@ -505,7 +527,7 @@ struct IoUringEnterFlags(Defaultable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
@@ -532,6 +554,11 @@ struct IoUringSqeFlags(Defaultable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt8):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
         """Returns `self | rhs`.
 
@@ -544,7 +571,7 @@ struct IoUringSqeFlags(Defaultable):
         return self.value | rhs.value
 
     @always_inline("nodebug")
-    fn __ior__(inout self, rhs: Self):
+    fn __ior__(mut self, rhs: Self):
         """Computes `self | rhs` and saves the result in self.
 
         Args:
@@ -568,6 +595,11 @@ struct IoUringCqeFlags(Defaultable, Boolable):
         self.value = 0
 
     @always_inline("nodebug")
+    @implicit
+    fn __init__(out self, value: UInt32):
+        self.value = value
+
+    @always_inline("nodebug")
     fn __and__(self, rhs: Self) -> Self:
         """Returns `self & rhs`.
 
@@ -589,59 +621,64 @@ struct IoUringCqeFlags(Defaultable, Boolable):
         return self.value != 0
 
 
+@value
 @register_passable("trivial")
 struct IoUringOp:
-    alias NOP = Self {id: IORING_OP_NOP}
-    alias READV = Self {id: IORING_OP_READV}
-    alias WRITEV = Self {id: IORING_OP_WRITEV}
-    alias FSYNC = Self {id: IORING_OP_FSYNC}
-    alias READ_FIXED = Self {id: IORING_OP_READ_FIXED}
-    alias WRITE_FIXED = Self {id: IORING_OP_WRITE_FIXED}
-    alias POLL_ADD = Self {id: IORING_OP_POLL_ADD}
-    alias POLL_REMOVE = Self {id: IORING_OP_POLL_REMOVE}
-    alias SYNC_FILE_RANGE = Self {id: IORING_OP_SYNC_FILE_RANGE}
-    alias SENDMSG = Self {id: IORING_OP_SENDMSG}
-    alias RECVMSG = Self {id: IORING_OP_RECVMSG}
-    alias TIMEOUT = Self {id: IORING_OP_TIMEOUT}
-    alias TIMEOUT_REMOVE = Self {id: IORING_OP_TIMEOUT_REMOVE}
-    alias ACCEPT = Self {id: IORING_OP_ACCEPT}
-    alias ASYNC_CANCEL = Self {id: IORING_OP_ASYNC_CANCEL}
-    alias LINK_TIMEOUT = Self {id: IORING_OP_LINK_TIMEOUT}
-    alias CONNECT = Self {id: IORING_OP_CONNECT}
-    alias FALLOCATE = Self {id: IORING_OP_FALLOCATE}
-    alias OPENAT = Self {id: IORING_OP_OPENAT}
-    alias CLOSE = Self {id: IORING_OP_CLOSE}
-    alias FILES_UPDATE = Self {id: IORING_OP_FILES_UPDATE}
-    alias STATX = Self {id: IORING_OP_STATX}
-    alias READ = Self {id: IORING_OP_READ}
-    alias WRITE = Self {id: IORING_OP_WRITE}
-    alias FADVISE = Self {id: IORING_OP_FADVISE}
-    alias MADVISE = Self {id: IORING_OP_MADVISE}
-    alias SEND = Self {id: IORING_OP_SEND}
-    alias RECV = Self {id: IORING_OP_RECV}
-    alias OPENAT2 = Self {id: IORING_OP_OPENAT2}
-    alias EPOLL_CTL = Self {id: IORING_OP_EPOLL_CTL}
-    alias SPLICE = Self {id: IORING_OP_SPLICE}
-    alias PROVIDE_BUFFERS = Self {id: IORING_OP_PROVIDE_BUFFERS}
-    alias REMOVE_BUFFERS = Self {id: IORING_OP_REMOVE_BUFFERS}
-    alias TEE = Self {id: IORING_OP_TEE}
-    alias SHUTDOWN = Self {id: IORING_OP_SHUTDOWN}
-    alias RENAMEAT = Self {id: IORING_OP_RENAMEAT}
-    alias UNLINKAT = Self {id: IORING_OP_UNLINKAT}
-    alias MKDIRAT = Self {id: IORING_OP_MKDIRAT}
-    alias SYMLINKAT = Self {id: IORING_OP_SYMLINKAT}
-    alias LINKAT = Self {id: IORING_OP_LINKAT}
-    alias MSG_RING = Self {id: IORING_OP_MSG_RING}
-    alias FSETXATTR = Self {id: IORING_OP_FSETXATTR}
-    alias SETXATTR = Self {id: IORING_OP_SETXATTR}
-    alias FGETXATTR = Self {id: IORING_OP_FGETXATTR}
-    alias GETXATTR = Self {id: IORING_OP_GETXATTR}
-    alias SOCKET = Self {id: IORING_OP_SOCKET}
-    alias URING_CMD = Self {id: IORING_OP_URING_CMD}
-    alias SEND_ZC = Self {id: IORING_OP_SEND_ZC}
-    alias SENDMSG_ZC = Self {id: IORING_OP_SENDMSG_ZC}
+    alias NOP = Self(unsafe_id=IORING_OP_NOP)
+    alias READV = Self(unsafe_id=IORING_OP_READV)
+    alias WRITEV = Self(unsafe_id=IORING_OP_WRITEV)
+    alias FSYNC = Self(unsafe_id=IORING_OP_FSYNC)
+    alias READ_FIXED = Self(unsafe_id=IORING_OP_READ_FIXED)
+    alias WRITE_FIXED = Self(unsafe_id=IORING_OP_WRITE_FIXED)
+    alias POLL_ADD = Self(unsafe_id=IORING_OP_POLL_ADD)
+    alias POLL_REMOVE = Self(unsafe_id=IORING_OP_POLL_REMOVE)
+    alias SYNC_FILE_RANGE = Self(unsafe_id=IORING_OP_SYNC_FILE_RANGE)
+    alias SENDMSG = Self(unsafe_id=IORING_OP_SENDMSG)
+    alias RECVMSG = Self(unsafe_id=IORING_OP_RECVMSG)
+    alias TIMEOUT = Self(unsafe_id=IORING_OP_TIMEOUT)
+    alias TIMEOUT_REMOVE = Self(unsafe_id=IORING_OP_TIMEOUT_REMOVE)
+    alias ACCEPT = Self(unsafe_id=IORING_OP_ACCEPT)
+    alias ASYNC_CANCEL = Self(unsafe_id=IORING_OP_ASYNC_CANCEL)
+    alias LINK_TIMEOUT = Self(unsafe_id=IORING_OP_LINK_TIMEOUT)
+    alias CONNECT = Self(unsafe_id=IORING_OP_CONNECT)
+    alias FALLOCATE = Self(unsafe_id=IORING_OP_FALLOCATE)
+    alias OPENAT = Self(unsafe_id=IORING_OP_OPENAT)
+    alias CLOSE = Self(unsafe_id=IORING_OP_CLOSE)
+    alias FILES_UPDATE = Self(unsafe_id=IORING_OP_FILES_UPDATE)
+    alias STATX = Self(unsafe_id=IORING_OP_STATX)
+    alias READ = Self(unsafe_id=IORING_OP_READ)
+    alias WRITE = Self(unsafe_id=IORING_OP_WRITE)
+    alias FADVISE = Self(unsafe_id=IORING_OP_FADVISE)
+    alias MADVISE = Self(unsafe_id=IORING_OP_MADVISE)
+    alias SEND = Self(unsafe_id=IORING_OP_SEND)
+    alias RECV = Self(unsafe_id=IORING_OP_RECV)
+    alias OPENAT2 = Self(unsafe_id=IORING_OP_OPENAT2)
+    alias EPOLL_CTL = Self(unsafe_id=IORING_OP_EPOLL_CTL)
+    alias SPLICE = Self(unsafe_id=IORING_OP_SPLICE)
+    alias PROVIDE_BUFFERS = Self(unsafe_id=IORING_OP_PROVIDE_BUFFERS)
+    alias REMOVE_BUFFERS = Self(unsafe_id=IORING_OP_REMOVE_BUFFERS)
+    alias TEE = Self(unsafe_id=IORING_OP_TEE)
+    alias SHUTDOWN = Self(unsafe_id=IORING_OP_SHUTDOWN)
+    alias RENAMEAT = Self(unsafe_id=IORING_OP_RENAMEAT)
+    alias UNLINKAT = Self(unsafe_id=IORING_OP_UNLINKAT)
+    alias MKDIRAT = Self(unsafe_id=IORING_OP_MKDIRAT)
+    alias SYMLINKAT = Self(unsafe_id=IORING_OP_SYMLINKAT)
+    alias LINKAT = Self(unsafe_id=IORING_OP_LINKAT)
+    alias MSG_RING = Self(unsafe_id=IORING_OP_MSG_RING)
+    alias FSETXATTR = Self(unsafe_id=IORING_OP_FSETXATTR)
+    alias SETXATTR = Self(unsafe_id=IORING_OP_SETXATTR)
+    alias FGETXATTR = Self(unsafe_id=IORING_OP_FGETXATTR)
+    alias GETXATTR = Self(unsafe_id=IORING_OP_GETXATTR)
+    alias SOCKET = Self(unsafe_id=IORING_OP_SOCKET)
+    alias URING_CMD = Self(unsafe_id=IORING_OP_URING_CMD)
+    alias SEND_ZC = Self(unsafe_id=IORING_OP_SEND_ZC)
+    alias SENDMSG_ZC = Self(unsafe_id=IORING_OP_SENDMSG_ZC)
 
     var id: UInt8
+
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: UInt8):
+        self.id = unsafe_id
 
 
 @value
@@ -656,13 +693,17 @@ struct IoUringFsyncFlags(Defaultable):
         self.value = 0
 
 
+@value
 @register_passable("trivial")
 struct IoUringMsgRingCmds:
-    alias DATA = Self {id: IORING_MSG_DATA}
-    alias SEND_FD = Self {id: IORING_MSG_SEND_FD}
+    alias DATA = Self(unsafe_id=IORING_MSG_DATA)
+    alias SEND_FD = Self(unsafe_id=IORING_MSG_SEND_FD)
 
     var id: UInt64
 
+    @always_inline("nodebug")
+    fn __init__(out self, *, unsafe_id: UInt64):
+        self.id = unsafe_id
 
 @value
 @register_passable("trivial")
