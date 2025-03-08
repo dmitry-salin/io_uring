@@ -119,9 +119,7 @@ struct MemoryMapping[sqe: SQE, cqe: CQE](Movable):
         self.sqes_mem = sqes_mem^
         self.sq_cq_mem = sq_cq_mem^
 
-    fn __init__(
-        out self, sq_entries: UInt32, mut params: IoUringParams
-    ) raises:
+    fn __init__(out self, sq_entries: UInt32, mut params: IoUringParams) raises:
         entries = Entries(sq_entries=sq_entries, params=params)
         # FIXME: Get the actual page size value at runtime.
         alias page_size = 4096

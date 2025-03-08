@@ -262,7 +262,7 @@ struct AddrFamily:
 
 @value
 @register_passable("trivial")
-struct Protocol:
+struct Protocol(Defaultable):
     """`IPPROTO_*` and other constants for use with `socket`."""
 
     alias IP = Self(unsafe_id=IPPROTO_IP)
@@ -298,6 +298,11 @@ struct Protocol:
     alias ROUTING = Self(unsafe_id=IPPROTO_ROUTING)
 
     var id: c_uint
+
+    @always_inline("nodebug")
+    fn __init__(out self):
+        constrained[IPPROTO_IP == 0]()
+        self = Self(unsafe_id=IPPROTO_IP)
 
     @always_inline("nodebug")
     fn __init__(out self, *, unsafe_id: c_uint):

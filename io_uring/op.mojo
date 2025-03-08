@@ -34,12 +34,12 @@ fn _nop_data[
 @always_inline
 fn _prep_rw[
     Fd: IoUringFileDescriptor
-](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32, offset: UInt64 = 0):
+](mut sqe: Sqe, op: IoUringOp, fd: Fd, addr: UInt64, len: UInt32):
     sqe.opcode = op
     sqe.flags = Fd.SQE_FLAGS
     sqe.ioprio = 0
     sqe.fd = fd.unsafe_fd()
-    sqe.off_or_addr2_or_cmd_op = offset
+    sqe.off_or_addr2_or_cmd_op = 0
     sqe.addr_or_splice_off_in_or_msgring_cmd = addr
     sqe.len_or_poll_flags = len
     sqe.op_flags = 0
@@ -521,4 +521,3 @@ struct Write[type: SQE, origin: MutableOrigin](Operation):
         _size_eq[__type_of(flags), UInt32]()
         self.sqe[].op_flags = flags.value
         return self^
-

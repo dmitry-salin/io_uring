@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mojo test -I . -D ASSERT=all tests/ 
+magic run mojo test -I . -D ASSERT=all tests/ 

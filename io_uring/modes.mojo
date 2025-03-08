@@ -23,7 +23,7 @@ struct PollingMode(Identifiable):
         Returns:
             True if the PollingModes have the same identity, False otherwise.
         """
-        return self.id == rhs.id
+        return self.id == rhs.id and self.setup_flags == rhs.setup_flags
 
     @always_inline
     fn __isnot__(self, rhs: Self) -> Bool:
@@ -35,4 +35,4 @@ struct PollingMode(Identifiable):
         Returns:
             True if the PollingModes have different identities, False otherwise.
         """
-        return self.id != rhs.id
+        return self.id != rhs.id or self.setup_flags != rhs.setup_flags

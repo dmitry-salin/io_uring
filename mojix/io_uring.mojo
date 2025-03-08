@@ -148,7 +148,7 @@ struct IoUringParams(Defaultable):
         self.cq_off = io_cqring_offsets()
 
 
-alias SQE64 = SQE (
+alias SQE64 = SQE(
     id=0,
     size=64,
     align=8,
@@ -156,7 +156,7 @@ alias SQE64 = SQE (
     setup_flags=IoUringSetupFlags(),
 )
 
-alias SQE128 = SQE (
+alias SQE128 = SQE(
     id=1,
     size=128,
     align=8,
@@ -185,7 +185,13 @@ struct SQE:
         Returns:
             True if the SQEs have the same identity, False otherwise.
         """
-        return self.id == rhs.id
+        return (
+            self.id == rhs.id
+            and self.size == rhs.size
+            and self.align == rhs.align
+            and self.array_size == rhs.array_size
+            and self.setup_flags == rhs.setup_flags
+        )
 
 
 alias CQE16 = CQE(
@@ -237,7 +243,14 @@ struct CQE:
         Returns:
             True if the CQEs have the same identity, False otherwise.
         """
-        return self.id == rhs.id
+        return (
+            self.id == rhs.id
+            and self.size == rhs.size
+            and self.align == rhs.align
+            and self.array_size == rhs.array_size
+            and self.rings_size == rhs.rings_size
+            and self.setup_flags == rhs.setup_flags
+        )
 
 
 @value
@@ -330,6 +343,30 @@ struct IoUringSetupFlags(Defaultable, Boolable):
     @implicit
     fn __init__(out self, value: UInt32):
         self.value = value
+
+    @always_inline("nodebug")
+    fn __eq__(self, rhs: Self) -> Bool:
+        """Compares one IoUringSetupFlags to another for equality.
+
+        Args:
+            rhs: The RHS value.
+
+        Returns:
+            True if the IoUringSetupFlags are the same and False otherwise.
+        """
+        return self.value == rhs.value
+
+    @always_inline("nodebug")
+    fn __ne__(self, rhs: Self) -> Bool:
+        """Compares one IoUringSetupFlags to another for inequality.
+
+        Args:
+            rhs: The RHS value.
+
+        Returns:
+            False if the IoUringSetupFlags are the same and True otherwise.
+        """
+        return self.value != rhs.value
 
     @always_inline("nodebug")
     fn __or__(self, rhs: Self) -> Self:
@@ -444,7 +481,9 @@ struct IoUringRegisterOp:
     alias REGISTER_FILES2 = Self(unsafe_id=IORING_REGISTER_FILES2)
     alias REGISTER_FILES_UPDATE2 = Self(unsafe_id=IORING_REGISTER_FILES_UPDATE2)
     alias REGISTER_BUFFERS2 = Self(unsafe_id=IORING_REGISTER_BUFFERS2)
-    alias REGISTER_BUFFERS_UPDATE = Self(unsafe_id=IORING_REGISTER_BUFFERS_UPDATE)
+    alias REGISTER_BUFFERS_UPDATE = Self(
+        unsafe_id=IORING_REGISTER_BUFFERS_UPDATE
+    )
     alias REGISTER_IOWQ_AFF = Self(unsafe_id=IORING_REGISTER_IOWQ_AFF)
     alias UNREGISTER_IOWQ_AFF = Self(unsafe_id=IORING_UNREGISTER_IOWQ_AFF)
     alias REGISTER_IOWQ_MAX_WORKERS = Self(
@@ -704,6 +743,7 @@ struct IoUringMsgRingCmds:
     @always_inline("nodebug")
     fn __init__(out self, *, unsafe_id: UInt64):
         self.id = unsafe_id
+
 
 @value
 @register_passable("trivial")

@@ -148,7 +148,9 @@ struct CqPtr[type: CQE, cq_origin: MutableOrigin](Sized, Boolable):
     @always_inline
     fn __next__[
         origin: MutableOrigin
-    ](ref [origin]self) -> ref [ImmutableOrigin.cast_from[origin].result] Cqe[type]:
+    ](ref [origin]self) -> ref [ImmutableOrigin.cast_from[origin].result] Cqe[
+        type
+    ]:
         ptr = self.cq[].cqes.offset(
             Int(self.cq[].cqe_head & self.cq[].ring_mask)
         )
