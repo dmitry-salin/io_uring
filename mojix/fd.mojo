@@ -209,7 +209,7 @@ struct OwnedFd[is_registered: Bool = False](FileDescriptor, IoUringFileDescripto
         """Closes/unregisters the file descriptor."""
         @parameter
         if is_registered:
-            op = IoUringRsrcUpdate(self._fd.cast[DType.uint32](), 0, 0)
+            op = IoUringRsrcUpdate(UInt32(self._fd), 0, 0)
             arg = op.as_register_arg(unsafe_opcode=IoUringRegisterOp.UNREGISTER_RING_FDS)
             try:
                 res = io_uring_register(self, arg)

@@ -162,7 +162,7 @@ struct Errno(Stringable):
         Args:
             errno: The error number.
         """
-        self = Self(negated_errno=-errno.cast[DType.int16]())
+        self = Self(negated_errno=-Int16(errno))
 
     @always_inline("nodebug")
     fn __init__(out self, *, error: Error) raises:

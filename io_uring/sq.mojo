@@ -120,11 +120,7 @@ struct Sq[type: SQE, polling: PollingMode](Movable, Sized, Boolable):
         Returns:
             The number of available sq entries.
         """
-        return (
-            (self.ring_entries - (self.sqe_tail - self.sqe_head))
-            .cast[DType.index]()
-            .value
-        )
+        return Int(self.ring_entries - (self.sqe_tail - self.sqe_head))
 
     @always_inline
     fn __bool__(self) -> Bool:
