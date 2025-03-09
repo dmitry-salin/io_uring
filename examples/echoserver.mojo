@@ -7,14 +7,13 @@ from mojix.io_uring import SQE64
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
 from io_uring import IoUring
-from io_uring.op import Accept, Read, Write
+from io_uring.buf import BufRing
+from io_uring.op import Accept, Read, Write, Recv
 
 alias BYTE = Int8
-alias MAX_CONNECTIONS = 16
 alias BACKLOG = 512
 alias MAX_MESSAGE_LEN = 2048
 alias BUFFERS_COUNT = 8  # Must be power of 2
-alias BUF_RING_SIZE = BUFFERS_COUNT
 # Number of entries in the submission queue
 alias SQ_ENTRIES = 128
 
@@ -22,13 +21,14 @@ alias ACCEPT = 0
 alias READ = 1
 alias WRITE = 2
 
+
 @value
 struct ConnInfo:
     var fd: Int32
     var type: UInt16
-    var bid: UInt32  # Buffer ID
+    var bid: UInt16  # Buffer ID
 
-    fn __init__(out self, fd: Int32, type: UInt16, bid: UInt32 = 0):
+    fn __init__(out self, fd: Int32, type: UInt16, bid: UInt16 = 0):
         self.fd = fd
         self.type = type
         self.bid = bid
@@ -43,56 +43,9 @@ struct ConnInfo:
         return Self(
             fd=Int32((value >> 32) & 0xFFFFFFFF),
             type=UInt16((value >> 16) & 0xFFFF),
-            bid=UInt32(value & 0xFFFF)  # Use lower 16 bits for buffer ID
+            bid=UInt16(value & 0xFFFF)  # Use lower 16 bits for buffer ID
         )
 
-
-struct BufferMemory:
-    """Manages the buffer memory for the server."""
-    var _data: InlineArray[Int8, MAX_MESSAGE_LEN * BUFFERS_COUNT]
-    var _buffer_avail: InlineArray[Bool, BUFFERS_COUNT]  # Track buffer availability
-    
-    fn __init__(out self):
-        """Initialize the buffer memory."""
-        print("Initializing BufferMemory with direct buffers")
-        self._data = InlineArray[Int8, MAX_MESSAGE_LEN * BUFFERS_COUNT](fill=0)
-        self._buffer_avail = InlineArray[Bool, BUFFERS_COUNT](fill=True)  # All buffers start as available
-    
-    fn get_buffer_pointer(self, idx: Int) -> UnsafePointer[BYTE]:
-        """Get a pointer to a specific buffer.
-        
-        Args:
-            idx: Buffer index.
-
-        Returns:
-            Unsafe pointer to the buffer.
-        """
-        return self._data.unsafe_ptr() + (idx * MAX_MESSAGE_LEN)
-        
-    fn get_available_buffer(mut self) -> (Int, UnsafePointer[BYTE]):
-        """Get an available buffer.
-        
-        Returns:
-            Tuple of (buffer index, buffer pointer).
-        """
-        # Find an available buffer
-        for i in range(BUFFERS_COUNT):
-            if self._buffer_avail[i]:
-                self._buffer_avail[i] = False  # Mark as in use
-                return (i, self.get_buffer_pointer(i))
-                
-        # If all buffers are in use, just return the first one
-        print("WARNING: All buffers in use, recycling buffer 0")
-        return (0, self.get_buffer_pointer(0))
-        
-    fn mark_buffer_available(mut self, idx: Int):
-        """Mark a buffer as available.
-        
-        Args:
-            idx: Buffer index.
-        """
-        self._buffer_avail[idx] = True
-        
 
 fn main() raises:
     """Run an echo server using io_uring with ring mapped buffers."""
@@ -100,13 +53,18 @@ fn main() raises:
     port = Int(args[1]) if len(args) > 1 else 8080
     
     # Initialize io_uring instance with 128 entries
-    ring = IoUring[](sq_entries=SQ_ENTRIES)
+    ring = IoUring(sq_entries=SQ_ENTRIES)
 
-    # We'll use separate buffer provider
-    # TODO: Use ring mapped buffers when available
-    var buffer_memory = BufferMemory()
+    # Create buffer ring for efficient memory management
+    print("Initializing buffer ring with", BUFFERS_COUNT, "entries of size", MAX_MESSAGE_LEN)
+    # Use buffer group ID 0 as that's what kernel expects by default
+    var buf_ring = ring.create_buf_ring(
+        bgid=0,  # Buffer group ID (must be consistent with Recv operation)
+        entries=BUFFERS_COUNT,
+        entry_size=MAX_MESSAGE_LEN
+    )
     
-    # Setup listener socket
+    # Setup listener socket with error handling
     listener_fd = socket(AddrFamily.INET, SocketType.STREAM)
     
     bind(listener_fd, SocketAddrV4(0, 0, 0, 0, port=port))
@@ -128,7 +86,7 @@ fn main() raises:
         submitted = ring.submit_and_wait(wait_nr=1)
 
         if submitted < 0:
-            print("Error no submitted")
+            print("Error: No submissions", submitted)
             break
         
         # Process completions
@@ -136,11 +94,11 @@ fn main() raises:
             res = cqe.res
             user_data = cqe.user_data
             
-            if res < 0:
-                print("Error:", res)
-                continue
-
             conn = ConnInfo.from_int(user_data)
+            
+            if res < 0:
+                print("Error:", res, "on operation type:", conn.type, "fd:", conn.fd)
+                continue
             
             # Handle accept completion
             if conn.type == ACCEPT:
@@ -148,21 +106,12 @@ fn main() raises:
                 client_fd = Fd(unsafe_fd=res)
                 active_connections += 1
                 print("New connection (active:", active_connections, ")")
-                
-                # Add read for the new connection (using direct buffers)
-                sq = ring.sq()
-                if sq:
-                    # Get available buffer
-                    var result = buffer_memory.get_available_buffer()
-                    var buf_idx = result[0]
-                    var buf_ptr = result[1]
-                    read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=UInt32(buf_idx))
-                    _ = Read[type=SQE64, origin=__origin_of(sq)](
-                        sq.__next__(), 
-                        client_fd, 
-                        buf_ptr,
-                        UInt(MAX_MESSAGE_LEN)
-                    ).user_data(read_conn.to_int())
+
+                # Add read for the new connection (using buffer ring)
+                # Use a different buffer for each connection (round-robin)
+                var next_buffer = UInt16(active_connections % BUFFERS_COUNT)
+                print("Assigning buffer", next_buffer, "to connection", client_fd.unsafe_fd())
+                _submit_read(client_fd.unsafe_fd(), next_buffer, ring, buf_ring)
                 
                 # Re-add accept
                 sq = ring.sq()
@@ -177,48 +126,70 @@ fn main() raises:
                     active_connections -= 1
                     print("Connection closed (active:", active_connections, ")")
                 else:
-                    # Get buffer info from the user data
-                    buffer_idx = Int(conn.bid)
-                    
+                    # Get buffer index directly from the connection info
+                    buffer_idx = conn.bid
                     bytes_read = Int(res)
                     print("Read completion (bytes:", bytes_read, ", buffer_idx:", buffer_idx, ")")
+
+                    _submit_write(conn, bytes_read, ring, buf_ring)
                     
-                    # Get the buffer pointer (already provided in connection info)
-                    buff_ptr = buffer_memory.get_buffer_pointer(buffer_idx)
-                    
-                    # Echo data back
-                    sq = ring.sq()
-                    if sq:
-                        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=UInt32(buffer_idx))
-                        _ = Write[type=SQE64, origin=__origin_of(sq)](
-                            sq.__next__(), 
-                            Fd(unsafe_fd=write_conn.fd), 
-                            buff_ptr,
-                            UInt(bytes_read)
-                        ).user_data(write_conn.to_int())
-            
+
             # Handle write completion
             elif conn.type == WRITE:
+                # buffer_idx = conn.bid
                 print("Write completion (buffer_idx:", conn.bid, ")")
-                
-                # Extract buffer index from connection info
-                buffer_idx = Int(conn.bid)
-                
-                # Mark the buffer as available again
-                buffer_memory.mark_buffer_available(buffer_idx)
-                print("Marked buffer available (idx:", buffer_idx, ")")
-                
-                # Post a new read for the connection (using direct buffer)
-                sq = ring.sq()
-                if sq:
-                    # Get available buffer
-                    var result = buffer_memory.get_available_buffer()
-                    var buf_idx = result[0]
-                    var buf_ptr = result[1]
-                    read_conn = ConnInfo(fd=conn.fd, type=READ, bid=UInt32(buf_idx))
-                    _ = Read[type=SQE64, origin=__origin_of(sq)](
-                        sq.__next__(), 
-                        Fd(unsafe_fd=conn.fd), 
-                        buf_ptr,
-                        UInt(MAX_MESSAGE_LEN)
-                    ).user_data(read_conn.to_int())
+
+                # Post a new read for the connection
+                _submit_read(conn.fd, conn.bid, ring, buf_ring)
+
+    # Clean up
+    ring.unsafe_delete_buf_ring(buf_ring^)
+
+
+# Helper functions
+
+fn _submit_write(conn: ConnInfo, bytes_read: Int, mut ring: IoUring, mut buf_ring: BufRing) raises:
+    """Handle read completion by submitting a write one with the bytes read."""
+    buffer_idx = conn.bid
+    
+    # Echo data back using the same buffer
+    sq = ring.sq()
+    if sq:
+        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=buffer_idx)
+        print("Setting up write with fd:", write_conn.fd, 
+              "buffer_idx:", buffer_idx)
+        
+        # Get a reference to the buffer directly from the ring
+        var buf_ring_ptr = buf_ring[]
+        var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(bytes_read))
+        var buffer_ptr = buffer.buf_ptr
+        
+        _ = Write(
+            sq.__next__(), 
+            Fd(unsafe_fd=write_conn.fd), 
+            buffer_ptr,
+            UInt(bytes_read)
+        ).user_data(write_conn.to_int())
+
+
+
+fn _submit_read(fd: Int32, buffer_idx: UInt16, mut ring: IoUring, mut buf_ring: BufRing) raises:
+    """Handle write completion by submitting a read submission."""
+    sq = ring.sq()
+    if sq:
+        read_conn = ConnInfo(fd=fd, type=READ, bid=buffer_idx)
+        
+        # Get buffer from the buffer ring
+        var buf_ring_ptr = buf_ring[]
+        var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(MAX_MESSAGE_LEN))
+        var buffer_ptr = buffer.buf_ptr
+        
+        print("Reading from fd:", fd, "using buffer:", buffer_idx)
+        
+        _ = Read(
+            sq.__next__(), 
+            Fd(unsafe_fd=fd),
+            buffer_ptr,
+            UInt(MAX_MESSAGE_LEN)
+        ).user_data(read_conn.to_int())
+
