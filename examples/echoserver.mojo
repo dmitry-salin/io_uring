@@ -3,7 +3,6 @@ from collections import InlineArray
 from memory import UnsafePointer
 
 from mojix.fd import Fd
-from mojix.io_uring import SQE64
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
 from io_uring import IoUring
