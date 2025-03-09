@@ -136,7 +136,6 @@ fn main() raises:
 
             # Handle write completion
             elif conn.type == WRITE:
-                # buffer_idx = conn.bid
                 print("Write completion (buffer_idx:", conn.bid, ")")
 
                 # Post a new read for the connection
