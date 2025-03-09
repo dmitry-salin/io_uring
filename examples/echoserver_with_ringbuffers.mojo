@@ -7,6 +7,7 @@ from mojix.io_uring import SQE64
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
 from io_uring import IoUring
+from io_uring.buf import BufRing
 from io_uring.op import Accept, Read, Write, Recv
 
 alias BYTE = Int8
@@ -47,13 +48,38 @@ struct ConnInfo:
         )
 
 
+fn _handle_read(conn: ConnInfo, bytes_read: Int, mut ring: IoUring, mut buf_ring: BufRing) raises:
+    """Handle read completion."""
+    buffer_idx = conn.bid
+    
+    # Echo data back using the same buffer
+    sq = ring.sq()
+    if sq:
+        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=buffer_idx)
+        print("Setting up write with fd:", write_conn.fd, 
+              "buffer_idx:", buffer_idx)
+        
+        # Get a reference to the buffer directly from the ring
+        var buf_ring_ptr = buf_ring[]
+        var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(bytes_read))
+        var buffer_ptr = buffer.buf_ptr
+        
+        _ = Write(
+        # _ = Write[type=SQE64, origin=__origin_of(sq)](
+            sq.__next__(), 
+            Fd(unsafe_fd=write_conn.fd), 
+            buffer_ptr,
+            UInt(bytes_read)
+        ).user_data(write_conn.to_int())
+
+
 fn main() raises:
     """Run an echo server using io_uring with ring mapped buffers."""
     args = sys.argv()
     port = Int(args[1]) if len(args) > 1 else 8080
     
     # Initialize io_uring instance with 128 entries
-    ring = IoUring[](sq_entries=SQ_ENTRIES)
+    ring = IoUring(sq_entries=SQ_ENTRIES)
 
     # Create buffer ring for efficient memory management
     print("Initializing buffer ring with", BUF_RING_SIZE, "entries of size", MAX_MESSAGE_LEN)
@@ -150,26 +176,10 @@ fn main() raises:
                     buffer_idx = conn.bid
                     bytes_read = Int(res)
                     print("Read completion (bytes:", bytes_read, ", buffer_idx:", buffer_idx, ")")
+
+                    _handle_read(conn, bytes_read, ring, buf_ring)
                     
-                    # Echo data back using the same buffer
-                    sq = ring.sq()
-                    if sq:
-                        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=buffer_idx)
-                        print("Setting up write with fd:", write_conn.fd, 
-                              "buffer_idx:", buffer_idx, "len:", bytes_read)
-                        
-                        # Get a reference to the buffer directly from the ring
-                        var buf_ring_ptr = buf_ring[]
-                        var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(bytes_read))
-                        var buffer_ptr = buffer.buf_ptr
-                        
-                        _ = Write[type=SQE64, origin=__origin_of(sq)](
-                            sq.__next__(), 
-                            Fd(unsafe_fd=write_conn.fd), 
-                            buffer_ptr,
-                            UInt(bytes_read)
-                        ).user_data(write_conn.to_int())
-            
+
             # Handle write completion
             elif conn.type == WRITE:
                 buffer_idx = conn.bid
