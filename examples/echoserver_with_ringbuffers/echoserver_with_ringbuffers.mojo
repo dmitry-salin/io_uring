@@ -1,13 +1,15 @@
 import sys
 from collections import InlineArray
 from memory import UnsafePointer
+from sys.info import sizeof
 
 from mojix.fd import Fd
 from mojix.io_uring import SQE64, IoUringCqeFlags
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
+from mojix.ctypes import c_void
 from io_uring import IoUring
-from io_uring.op import Accept, Read, Write, RecvMsg
+from io_uring.op import Accept, Read, Write, Recv
 from io_uring.buf import BufRing
 
 alias BYTE = Int8
@@ -58,13 +60,14 @@ fn main() raises:
 
     # Create buffer ring for efficient memory management
     print("Initializing buffer ring with", BUF_RING_SIZE, "entries of size", MAX_MESSAGE_LEN)
+    # Use buffer group ID 0 as that's what kernel expects by default
     var buf_ring = ring.create_buf_ring(
-        bgid=7,  # Buffer group ID (arbitrary, but must be consistent)
+        bgid=0,  # Buffer group ID (must be consistent with Recv operation)
         entries=BUF_RING_SIZE,
         entry_size=MAX_MESSAGE_LEN
     )
     
-    # Setup listener socket
+    # Setup listener socket with error handling
     listener_fd = socket(AddrFamily.INET, SocketType.STREAM)
     
     bind(listener_fd, SocketAddrV4(0, 0, 0, 0, port=port))
@@ -95,11 +98,36 @@ fn main() raises:
             flags = cqe.flags
             user_data = cqe.user_data
             
-            if res < 0:
-                print("Error:", res)
-                continue
-
             conn = ConnInfo.from_int(user_data)
+            
+            if res < 0:
+                print("Error:", res, "on operation type:", conn.type, "fd:", conn.fd)
+                # For READ operations with error, still post a new read
+                if conn.type == READ and conn.fd > 0:
+                    sq = ring.sq()
+                    if sq:
+                        # Instead of using a buffer group, let's allocate a fixed buffer for reading
+                        var buf_idx: UInt16 = 0
+                        
+                        # Get buffer index from the buffer ring
+                        var buf_ring_ptr = buf_ring[]
+                        var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
+                        buf_idx = buffer.index
+                        print("Using buffer idx:", buf_idx, "for reading (error recovery)")
+                        
+                        # Use the buffer and save its index in connection info
+                        read_conn = ConnInfo(fd=conn.fd, type=READ, bid=buf_idx)
+                        # Store the buffer_ptr to use it in the read operation
+                        var buffer_ptr = buffer.buf_ptr
+                        
+                        _ = Read[type=SQE64, origin=__origin_of(sq)](
+                            sq.__next__(), 
+                            Fd(unsafe_fd=conn.fd),
+                            buffer_ptr,
+                            UInt(MAX_MESSAGE_LEN)
+                        ).user_data(read_conn.to_int())
+                        print("Re-posted read after error for fd:", conn.fd)
+                continue
             
             # Handle accept completion
             if conn.type == ACCEPT:
@@ -113,12 +141,27 @@ fn main() raises:
                 if sq:
                     read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ)
                     
-                    # Use provided buffer group for reading
-                    _ = RecvMsg[type=SQE64, origin=__origin_of(sq)](
+                    # Instead of using a buffer group, let's allocate a fixed buffer for reading
+                    var buf_idx: UInt16 = 0
+                    
+                    # Get buffer index from the buffer ring
+                    var buf_ring_ptr = buf_ring[]
+                    var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
+                    buf_idx = buffer.index
+                    print("Using buffer idx:", buf_idx, "for reading")
+                    
+                    # Use the buffer and save its index in connection info
+                    read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ, bid=buf_idx)
+                    
+                    # Store the buffer_ptr to use it in the read operation
+                    var buffer_ptr = buffer.buf_ptr
+                    
+                    _ = Read[type=SQE64, origin=__origin_of(sq)](
                         sq.__next__(), 
                         client_fd,
-                        UInt32(MAX_MESSAGE_LEN)
-                    ).buf_group(7).user_data(read_conn.to_int())
+                        buffer_ptr,
+                        UInt(MAX_MESSAGE_LEN)
+                    ).user_data(read_conn.to_int())
                 
                 # Re-add accept
                 sq = ring.sq()
@@ -133,30 +176,29 @@ fn main() raises:
                     active_connections -= 1
                     print("Connection closed (active:", active_connections, ")")
                 else:
-                    # Check if this is a buffer ring completion
-                    if flags & IoUringCqeFlags.BUFFER:
-                        # Extract buffer index from flags
-                        buffer_idx = BufRing.flags_to_index(flags)
-                        bytes_read = Int(res)
-                        print("Read completion (bytes:", bytes_read, ", buffer_idx:", buffer_idx, ")")
+                    # Get buffer index directly from the connection info
+                    buffer_idx = conn.bid
+                    bytes_read = Int(res)
+                    print("Read completion (bytes:", bytes_read, ", buffer_idx:", buffer_idx, ")")
+                    
+                    # Echo data back using the same buffer
+                    sq = ring.sq()
+                    if sq:
+                        write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=buffer_idx)
+                        print("Setting up write with fd:", write_conn.fd, 
+                              "buffer_idx:", buffer_idx, "len:", bytes_read)
                         
-                        # Get the buffer pointer using the buffer index
-                        buf_ring_ptr = buf_ring[]
-                        buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(bytes_read))
+                        # Get a reference to the buffer directly from the ring
+                        var buf_ring_ptr = buf_ring[]
+                        var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(bytes_read))
+                        var buffer_ptr = buffer.buf_ptr
                         
-                        # Echo data back
-                        sq = ring.sq()
-                        if sq:
-                            write_conn = ConnInfo(fd=conn.fd, type=WRITE, bid=buffer_idx)
-                            _ = Write[type=SQE64, origin=__origin_of(sq)](
-                                sq.__next__(), 
-                                Fd(unsafe_fd=write_conn.fd), 
-                                buffer.buf_ptr,
-                                UInt(bytes_read)
-                            ).user_data(write_conn.to_int())
-                        
-                        # Buffer will be automatically recycled when it goes out of scope
-                        _ = buffer.into_index()  # Prevent auto-recycling until we're done with Write
+                        _ = Write[type=SQE64, origin=__origin_of(sq)](
+                            sq.__next__(), 
+                            Fd(unsafe_fd=write_conn.fd), 
+                            buffer_ptr,
+                            UInt(bytes_read)
+                        ).user_data(write_conn.to_int())
             
             # Handle write completion
             elif conn.type == WRITE:
@@ -168,12 +210,27 @@ fn main() raises:
                 if sq:
                     read_conn = ConnInfo(fd=conn.fd, type=READ)
                     
-                    # Use provided buffer group for reading
-                    _ = RecvMsg[type=SQE64, origin=__origin_of(sq)](
+                    # Instead of using a buffer group, let's allocate a fixed buffer for reading
+                    var buf_idx: UInt16 = 0
+                    
+                    # Get buffer index from the buffer ring
+                    var buf_ring_ptr = buf_ring[]
+                    var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
+                    buf_idx = buffer.index
+                    print("Using buffer idx:", buf_idx, "for reading")
+                    
+                    # Use the buffer and save its index in connection info
+                    read_conn = ConnInfo(fd=conn.fd, type=READ, bid=buf_idx)
+                    
+                    # Store the buffer_ptr to use it in the read operation
+                    var buffer_ptr = buffer.buf_ptr
+                    
+                    _ = Read[type=SQE64, origin=__origin_of(sq)](
                         sq.__next__(), 
                         Fd(unsafe_fd=conn.fd),
-                        UInt32(MAX_MESSAGE_LEN)
-                    ).buf_group(7).user_data(read_conn.to_int())
+                        buffer_ptr,
+                        UInt(MAX_MESSAGE_LEN)
+                    ).user_data(read_conn.to_int())
 
     # Clean up
     ring.unsafe_delete_buf_ring(buf_ring^)
