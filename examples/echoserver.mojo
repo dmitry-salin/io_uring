@@ -13,9 +13,9 @@ from io_uring.op import Accept, Read, Write, Recv
 alias BYTE = Int8
 alias BACKLOG = 512
 alias MAX_MESSAGE_LEN = 2048
-alias BUFFERS_COUNT = 8  # Must be power of 2
+alias BUFFERS_COUNT = 16  # Must be power of 2
 # Number of entries in the submission queue
-alias SQ_ENTRIES = 128
+alias SQ_ENTRIES = 512
 
 alias ACCEPT = 0
 alias READ = 1
