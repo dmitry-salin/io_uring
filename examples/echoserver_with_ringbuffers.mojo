@@ -1,16 +1,13 @@
 import sys
 from collections import InlineArray
 from memory import UnsafePointer
-from sys.info import sizeof
 
 from mojix.fd import Fd
-from mojix.io_uring import SQE64, IoUringCqeFlags
+from mojix.io_uring import SQE64
 from mojix.net.socket import socket, bind, listen
 from mojix.net.types import AddrFamily, SocketType, SocketAddrV4
-from mojix.ctypes import c_void
 from io_uring import IoUring
 from io_uring.op import Accept, Read, Write, Recv
-from io_uring.buf import BufRing
 
 alias BYTE = Int8
 alias MAX_CONNECTIONS = 16
@@ -95,38 +92,12 @@ fn main() raises:
         # Process completions
         for cqe in ring.cq(wait_nr=0):
             res = cqe.res
-            flags = cqe.flags
             user_data = cqe.user_data
             
             conn = ConnInfo.from_int(user_data)
             
             if res < 0:
                 print("Error:", res, "on operation type:", conn.type, "fd:", conn.fd)
-                # For READ operations with error, still post a new read
-                if conn.type == READ and conn.fd > 0:
-                    sq = ring.sq()
-                    if sq:
-                        # Instead of using a buffer group, let's allocate a fixed buffer for reading
-                        var buf_idx: UInt16 = 0
-                        
-                        # Get buffer index from the buffer ring
-                        var buf_ring_ptr = buf_ring[]
-                        var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
-                        buf_idx = buffer.index
-                        print("Using buffer idx:", buf_idx, "for reading (error recovery)")
-                        
-                        # Use the buffer and save its index in connection info
-                        read_conn = ConnInfo(fd=conn.fd, type=READ, bid=buf_idx)
-                        # Store the buffer_ptr to use it in the read operation
-                        var buffer_ptr = buffer.buf_ptr
-                        
-                        _ = Read[type=SQE64, origin=__origin_of(sq)](
-                            sq.__next__(), 
-                            Fd(unsafe_fd=conn.fd),
-                            buffer_ptr,
-                            UInt(MAX_MESSAGE_LEN)
-                        ).user_data(read_conn.to_int())
-                        print("Re-posted read after error for fd:", conn.fd)
                 continue
             
             # Handle accept completion
@@ -142,12 +113,11 @@ fn main() raises:
                     read_conn = ConnInfo(fd=client_fd.unsafe_fd(), type=READ)
                     
                     # Instead of using a buffer group, let's allocate a fixed buffer for reading
-                    var buf_idx: UInt16 = 0
+                    var buf_idx = 0
                     
                     # Get buffer index from the buffer ring
                     var buf_ring_ptr = buf_ring[]
-                    var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
-                    buf_idx = buffer.index
+                    var buffer = buf_ring_ptr.unsafe_buf(index=buf_idx, len=UInt32(MAX_MESSAGE_LEN))
                     print("Using buffer idx:", buf_idx, "for reading")
                     
                     # Use the buffer and save its index in connection info
@@ -211,12 +181,11 @@ fn main() raises:
                     read_conn = ConnInfo(fd=conn.fd, type=READ)
                     
                     # Instead of using a buffer group, let's allocate a fixed buffer for reading
-                    var buf_idx: UInt16 = 0
+                    var buf_idx = 0
                     
                     # Get buffer index from the buffer ring
                     var buf_ring_ptr = buf_ring[]
-                    var buffer = buf_ring_ptr.unsafe_buf(index=0, len=UInt32(MAX_MESSAGE_LEN))
-                    buf_idx = buffer.index
+                    var buffer = buf_ring_ptr.unsafe_buf(index=buf_idx, len=UInt32(MAX_MESSAGE_LEN))
                     print("Using buffer idx:", buf_idx, "for reading")
                     
                     # Use the buffer and save its index in connection info
