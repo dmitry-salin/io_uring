@@ -108,8 +108,10 @@ fn main() raises:
                 print("New connection (active:", active_connections, ")")
 
                 # Add read for the new connection (using buffer ring)
-                # Instead of using a buffer group, let's allocate a fixed buffer for reading
-                _submit_read(client_fd.unsafe_fd(), 0, ring, buf_ring)
+                # Use a different buffer for each connection (round-robin)
+                var next_buffer = UInt16(active_connections % BUFFERS_COUNT)
+                print("Assigning buffer", next_buffer, "to connection", client_fd.unsafe_fd())
+                _submit_read(client_fd.unsafe_fd(), next_buffer, ring, buf_ring)
                 
                 # Re-add accept
                 sq = ring.sq()
@@ -181,6 +183,8 @@ fn _submit_read(fd: Int32, buffer_idx: UInt16, mut ring: IoUring, mut buf_ring: 
         var buf_ring_ptr = buf_ring[]
         var buffer = buf_ring_ptr.unsafe_buf(index=buffer_idx, len=UInt32(MAX_MESSAGE_LEN))
         var buffer_ptr = buffer.buf_ptr
+        
+        print("Reading from fd:", fd, "using buffer:", buffer_idx)
         
         _ = Read(
             sq.__next__(), 
