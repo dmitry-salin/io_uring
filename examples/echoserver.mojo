@@ -23,6 +23,7 @@ alias WRITE = 2
 
 
 @value
+@register_passable("trivial")
 struct ConnInfo:
     var fd: Int32
     var type: UInt16
