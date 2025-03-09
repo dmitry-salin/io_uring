@@ -176,7 +176,7 @@ struct Connect[type: SQE, origin: MutableOrigin](Operation):
             IoUringOp.CONNECT,
             fd,
             Int(unsafe_addr.addr_unsafe_ptr()),
-            Addr.ADDR_LEN.cast[DType.uint64](),
+            UInt64(Addr.ADDR_LEN),
         )
         self.sqe = Pointer.address_of(sqe)
 

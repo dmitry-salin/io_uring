@@ -41,9 +41,8 @@ struct BufRing:
     ) raises:
         _size_eq[io_uring_buf, 16]()
         _align_eq[io_uring_buf, 8]()
-        ring_size = (
-            _checked_add(sizeof[io_uring_buf](), entry_size)
-            * entries.cast[DType.uint32]()
+        ring_size = _checked_add(sizeof[io_uring_buf](), entry_size) * UInt32(
+            entries
         )
         mem = Region.private(
             len=ring_size.cast[DType.index]().value, flags=MapFlags()
@@ -51,7 +50,7 @@ struct BufRing:
 
         reg = IoUringBufReg(
             ring_addr=mem.addr(),
-            ring_entries=entries.cast[DType.uint32](),
+            ring_entries=UInt32(entries),
             bgid=bgid,
         )
         res = io_uring.register(
@@ -61,9 +60,7 @@ struct BufRing:
         )
         debug_assert(res == 0, "failed to register buffer ring")
 
-        ring_ptr = mem.unsafe_ptr[io_uring_buf](
-            offset=0, count=entries.cast[DType.uint32]()
-        )
+        ring_ptr = mem.unsafe_ptr[io_uring_buf](offset=0, count=UInt32(entries))
         # Init tail.
         # [liburing]: https://github.com/axboe/liburing/blob/liburing-2.6/src/include/liburing.h#L1444.
         ring_ptr[].resv = 0
@@ -139,7 +136,7 @@ struct BufRing:
             bitwidthof[IoUringCqeFlags]() - IORING_CQE_BUFFER_SHIFT
             <= bitwidthof[UInt16]()
         ]()
-        return (flags >> IORING_CQE_BUFFER_SHIFT).value.cast[DType.uint16]()
+        return UInt16((flags >> IORING_CQE_BUFFER_SHIFT).value)
 
 
 @register_passable
@@ -170,7 +167,7 @@ struct BufRingPtr[ring_origin: MutableOrigin]:
         buf_origin, ring_origin
     ]:
         buf_ptr = self._ring[]._buf_ptr.offset(
-            index.cast[DType.uint32]() * self._ring[].entry_size
+            UInt32(index) * self._ring[].entry_size
         )
         return Buf(
             unsafe_buf_ptr=buf_ptr,
@@ -197,9 +194,10 @@ struct BufRingPtr[ring_origin: MutableOrigin]:
         )
         next[].addr = Int(
             self._ring[]._buf_ptr.offset(
-                index.cast[DType.uint32]() * self._ring[].entry_size
+                UInt32(index) * self._ring[].entry_size
             )
         )
+
         next[].bid = index
 
         @parameter

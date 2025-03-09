@@ -92,7 +92,7 @@ struct Cq[type: CQE](Movable, Sized, Boolable):
         Returns:
             The number of entries in the cq.
         """
-        return (self.cqe_tail - self.cqe_head).cast[DType.index]().value
+        return Int(self.cqe_tail - self.cqe_head)
 
     @always_inline
     fn __bool__(self) -> Bool:

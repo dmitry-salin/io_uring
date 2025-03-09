@@ -28,7 +28,7 @@ fn _socket(
     _size_eq[Protocol, c_int]()
 
     res = syscall[__NR_socket, Scalar[DType.index], uses_memory=False](
-        domain.id.cast[DType.uint32](), type.id | flags.value, protocol
+        UInt32(domain.id), type.id | flags.value, protocol
     )
     return OwnedFd(unsafe_fd=unsafe_decode_result[UnsafeFd.element_type](res))
 
